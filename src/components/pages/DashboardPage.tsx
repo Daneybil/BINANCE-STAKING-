@@ -33,7 +33,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="space-y-4">
           <Badge className="bg-primary/10 text-primary border-none text-[12px] uppercase font-bold tracking-[0.4em] px-4 py-1.5 mb-2">Binance Network Interface</Badge>
           <h2 className="text-7xl font-black font-heading tracking-tighter uppercase leading-[0.8]">Binance <span className="text-primary italic">Portfolio</span></h2>
-          <p className="text-foreground/40 text-sm font-bold tracking-[0.2em] uppercase max-w-2xl italic">DIRECT BINANCE SMART CHAIN EXPLORER AND OFFICIAL COMMUNITY REWARD LEDGER TRACKING.</p>
+          <p className="text-foreground/40 text-sm font-bold tracking-[0.2em] max-w-2xl">Direct Binance Smart Chain explorer and official community reward ledger tracking.</p>
         </div>
         
         {walletAddress && (
@@ -51,7 +51,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
           <div className="space-y-2">
             <h3 className="text-3xl font-black tracking-tighter uppercase">Authentication Required</h3>
-            <p className="text-foreground/40 max-w-sm mx-auto text-[10px] leading-relaxed uppercase tracking-[0.2em] font-black">PLEASE CONNECT your decentralized wallet to access current staking positions and earnings.</p>
+            <p className="text-foreground/40 max-w-sm mx-auto text-sm leading-relaxed tracking-wider font-bold">Please connect your decentralized wallet to access current staking positions and earnings.</p>
           </div>
           <Button onClick={onConnect} className="binance-button rounded-xl px-12 h-14 text-xs font-black uppercase tracking-widest">Connect Wallet To Access</Button>
         </div>
@@ -87,7 +87,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             
             {stakes.length === 0 ? (
               <div className="glass-panel border-white/5 rounded-[3rem] p-20 text-center animate-pulse">
-                <p className="text-foreground/40 font-bold uppercase tracking-[0.3em] text-xs">No active staking data found for this address</p>
+                <p className="text-foreground/40 font-bold tracking-[0.1em] text-xs">No active staking data found for this address</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

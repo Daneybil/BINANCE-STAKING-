@@ -49,25 +49,25 @@ export const StatsPage: React.FC<StatsPageProps> = ({ signer, initialStats }) =>
             icon={<Globe className="w-5 h-5" />}
             label="TOTAL STAKE VOLUME" 
             value={formatCurrency(Number(stats.totalStaked))} 
-            growth="MANAGED LIQUIDITY"
+            growth="Managed liquidity"
         />
         <StatDetail 
             icon={<Coins className="w-5 h-5" />}
-            label="TOTAL DEPOSIT WITH TOTAL STAKE" 
+            label="TOTAL DEPOSIT" 
             value={formatCurrency(Number(stats.totalDeposits))} 
-            growth="TRANSACTION FEE BACKED"
+            growth="Transaction fee backed"
         />
         <StatDetail 
             icon={<TrendingUp className="w-5 h-5" />}
             label="TOTAL REWARD CLAIMED" 
             value={formatCurrency(Number(stats.totalRewardsClaimed))} 
-            growth="+15% DAILY AVERAGE"
+            growth="+15% Daily average"
         />
         <StatDetail 
             icon={<ShieldCheck className="w-5 h-5" />}
-            label="CURRENT REWARD POOL TO BE CLAIMED" 
+            label="CURRENT REWARDS TO BE CLAIMED" 
             value={formatCurrency(Number(stats.currentRewardPool))} 
-            growth="OFFICIAL RESERVE"
+            growth="Official reserve"
             highlight
         />
       </div>
@@ -86,7 +86,7 @@ export const StatsPage: React.FC<StatsPageProps> = ({ signer, initialStats }) =>
                 </div>
                 <div>
                   <h3 className="text-3xl font-black uppercase tracking-tighter">ECOSYSTEM REWARD INDEX</h3>
-                  <p className="text-[12px] font-black text-foreground/40 uppercase tracking-[0.3em] leading-none">AUTOMATED FEE DISTRIBUTION ACROSS SUPPORTED NETWORK LIQUIDITY</p>
+                  <p className="text-[12px] font-bold text-foreground/40 tracking-[0.3em] leading-none uppercase">Automated fee distribution across supported network liquidity</p>
                 </div>
               </div>
 
@@ -98,7 +98,7 @@ export const StatsPage: React.FC<StatsPageProps> = ({ signer, initialStats }) =>
               </div>
 
               <div className="pt-8 border-t border-white/5 flex items-center justify-between">
-                <p className="text-[11px] font-black text-foreground/30 uppercase tracking-[0.3em] italic">BINANCE MASTER LEDGER SYNCHRONIZED: BLOCK #REAL-TIME</p>
+                <p className="text-[11px] font-bold text-foreground/30 tracking-[0.1em] italic">Binance master ledger synchronized: Block #Real-Time</p>
                 <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
                     <span className="text-[11px] font-black text-green-500 uppercase tracking-widest">PROTOCOL ACTIVE</span>
@@ -116,8 +116,8 @@ export const StatsPage: React.FC<StatsPageProps> = ({ signer, initialStats }) =>
                     <Badge variant="outline" className="text-[9px] font-black tracking-widest uppercase border-primary/20 text-primary bg-primary/5">UPTIME 100%</Badge>
                     <Badge variant="outline" className="text-[9px] font-black tracking-widest uppercase border-blue-500/20 text-blue-500 bg-blue-500/5">BEP-20 STANDARD</Badge>
                 </div>
-                <p className="text-[10px] text-foreground/40 leading-relaxed font-black uppercase tracking-widest">
-                    THE PROTOCOL OPERATES AS A SELF-BALANCING INDEX. REWARD POOLS ARE REPLENISHED VIA SYSTEM-LEVEL MARKET MAKING AND ARBITRAGE STRATEGIES.
+                <p className="text-[11px] text-foreground/50 leading-relaxed font-bold">
+                    The protocol operates as a self-balancing index. Reward pools are replenished via system-level market making and arbitrage strategies executed by official trading algorithms.
                 </p>
             </Card>
 
@@ -125,8 +125,8 @@ export const StatsPage: React.FC<StatsPageProps> = ({ signer, initialStats }) =>
                 <div className="space-y-4">
                     <h4 className="text-primary-foreground/60 font-black text-[10px] tracking-widest uppercase">REWARDS INDEX</h4>
                     <p className="text-primary-foreground text-7xl font-black font-heading leading-tight italic tracking-tighter">15.0%</p>
-                    <p className="text-primary-foreground text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                        BASE DAILY REWARD RATE DISTRIBUTED TO ALL ACTIVE VAULTS GLOBALLY.
+                    <p className="text-primary-foreground text-[11px] font-bold tracking-wide leading-relaxed">
+                        Base daily reward rate distributed to all active vaults globally.
                     </p>
                 </div>
             </Card>

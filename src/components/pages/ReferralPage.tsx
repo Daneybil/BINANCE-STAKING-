@@ -71,7 +71,7 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
         <div className="space-y-4">
           <Badge className="bg-primary/10 text-primary border-none text-[12px] uppercase font-bold tracking-[0.4em] px-4 py-1.5 mb-2">Binance Growth Program</Badge>
           <h2 className="text-7xl font-black font-heading tracking-tighter uppercase leading-[0.8]">Referral <span className="text-primary italic">Incentives</span></h2>
-          <p className="text-foreground/40 text-sm font-bold tracking-[0.2em] uppercase max-w-2xl">Earn direct 10% Binance commission by expanding the official BNB cross-chain liquidity network.</p>
+          <p className="text-foreground/40 text-sm font-bold tracking-wide max-w-2xl">Earn direct 10% Binance commission by expanding the official BNB cross-chain liquidity network.</p>
         </div>
       </div>
 
@@ -82,7 +82,7 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
           </div>
           <div className="space-y-2">
             <h3 className="text-2xl font-bold">Referral Access Required</h3>
-            <p className="text-foreground/40 max-w-sm mx-auto text-sm leading-relaxed uppercase tracking-wider font-bold">Connect your institutional wallet to generate your unique partner link and track commissions.</p>
+            <p className="text-foreground/40 max-w-sm mx-auto text-sm leading-relaxed tracking-wider font-bold">Connect your institutional wallet to generate your unique partner link and track commissions.</p>
           </div>
           <Button onClick={onConnect} className="binance-button rounded-xl px-12 h-14 text-xs">Connect Wallet To Begin</Button>
         </div>
@@ -117,7 +117,7 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
                     </div>
                     <h4 className="font-black text-sm uppercase tracking-tight">Performance Boost</h4>
                 </div>
-                <p className="text-[11px] text-foreground/50 leading-relaxed font-bold uppercase tracking-wider">
+                <p className="text-[11px] text-foreground/50 leading-relaxed font-bold tracking-wider">
                     Our multi-tier referral system is built for scale. Unlike other protocols, we settle commissions instantly in the base asset using smart contract logic.
                 </p>
                 <div className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] italic">
@@ -221,7 +221,7 @@ function Step({ index, text }: { index: number, text: string }) {
   return (
     <div className="flex items-start gap-3">
         <span className="text-primary font-black font-heading text-lg italic opacity-50">0{index}</span>
-        <p className="text-[10px] text-foreground/50 font-bold uppercase tracking-wider leading-relaxed">{text}</p>
+        <p className="text-[10px] text-foreground/50 font-bold tracking-wider leading-relaxed">{text}</p>
     </div>
   );
 }

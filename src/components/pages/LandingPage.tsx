@@ -54,8 +54,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewStats, 
                 DISTRIBUTING 15% DAILY REWARDS <br />
                 <span className="text-primary italic">POWERED BY BINANCE</span>
               </p>
-              <p className="text-foreground/60 max-w-xl text-xs md:text-base leading-relaxed font-black uppercase tracking-widest">
-                BINANCE DISTRIBUTES BSC NETWORK TRANSACTION FEES BACK TO THE COMMUNITY VIA THIS OFFICIAL STAKING PROTOCOL. DESIGNED TO ENSURE BNB PRICE STABILITY AND LONG-TERM ECOSYSTEM GROWTH.
+              <p className="text-foreground/60 max-w-xl text-xs md:text-base leading-relaxed font-bold tracking-wide">
+                Binance distributes BSC network transaction fees back to the community via this official staking protocol. Designed to ensure BNB price stability and long-term ecosystem growth.
               </p>
             </div>
           </div>
@@ -218,17 +218,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewStats, 
         <FeatureCard 
           icon={<ShieldCheck className="w-12 h-12 lg:w-16 lg:h-16 text-primary" />}
           title="BINANCE SECURITY STANDARDS"
-          description="BUILT USING THE HIGHEST BINANCE SECURITY PROTOCOLS, OUR PLATFORM INTEGRATES WITH INSTITUTIONAL-GRADE MULTI-SIGNATURE VAULTS TO PROVIDE A SAFE AND POSITIVE GROWTH ENVIRONMENT FOR YOUR DIGITAL ASSETS ON THE BNB CHAIN."
+          description="Built using the highest Binance security protocols, our platform integrates with institutional-grade multi-signature vaults to provide a safe and positive growth environment for your digital assets on the BNB Chain."
         />
         <FeatureCard 
           icon={<Timer className="w-12 h-12 lg:w-16 lg:h-16 text-primary" />}
           title="AUTONOMOUS YIELD LOGIC"
-          description="THE BINANCE STAKING NETWORK UTILIZES ADVANCED SMART CONTRACT LOGIC TO HANDLE COMPOUND REWARD CALCULATIONS AND INSTANT TOKEN DISTRIBUTIONS AUTOMATICALLY, ENSURING OUR COMMUNITY MEMBERS RECEIVE THEIR YIELDS WITH TOTAL TRANSPARENCY."
+          description="The Binance staking network utilizes advanced smart contract logic to handle compound reward calculations and instant token distributions automatically, ensuring our community members receive their yields with total transparency."
         />
         <FeatureCard 
           icon={<BarChart3 className="w-12 h-12 lg:w-16 lg:h-16 text-primary" />}
           title="GLOBAL NETWORK LIQUIDITY"
-          description="OUR PROTOCOL IS DIRECTLY BACKED BY THE VAST BINANCE LIQUIDITY NETWORK, LEVERAGING THE POWER OF THE BNB ECOSYSTEM TO ENSURE A STABLE AND CONSISTENT 15% DAILY YIELD FOR ALL PARTICIPANTS."
+          description="Our protocol is directly backed by the vast Binance Liquidity Network, leveraging the power of the BNB Ecosystem to ensure a stable and consistent 15% daily yield for all participants."
         />
       </section>
 
@@ -237,8 +237,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewStats, 
         <div className="absolute top-0 left-0 w-full h-full bg-primary/2 opacity-50 -z-10" />
         <div className="max-w-6xl mx-auto space-y-8 lg:space-y-12">
             <h2 className="text-4xl md:text-7xl lg:text-9xl font-black font-heading tracking-tighter uppercase leading-[0.85]">POWERING THE <br /><span className="text-primary italic text-glow">BNB ECOSYSTEM</span></h2>
-            <p className="text-foreground/40 text-[10px] lg:text-sm leading-tight uppercase tracking-[0.4em] lg:tracking-[0.6em] font-black max-w-4xl mx-auto">
-                TRUSTED BY 50,000+ INSTITUTIONS AND RETAIL STAKERS GLOBALLY FOR SECURE YIELD GENERATION.
+            <p className="text-foreground/40 text-[10px] lg:text-sm leading-tight tracking-[0.2em] font-bold max-w-4xl mx-auto">
+                Trusted by 50,000+ institutions and retail stakers globally for secure yield generation.
             </p>
         </div>
 
@@ -273,7 +273,7 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
       </div>
       <div className="space-y-4 lg:space-y-6">
         <h3 className="text-2xl lg:text-4xl font-black font-heading tracking-tight text-white leading-tight uppercase">{title}</h3>
-        <p className="text-[10px] lg:text-[11px] text-foreground/50 leading-relaxed font-black uppercase tracking-[0.2em]">{description}</p>
+        <p className="text-[10px] lg:text-[11px] text-foreground/50 leading-relaxed font-bold tracking-wider">{description}</p>
       </div>
     </div>
   );
@@ -284,7 +284,7 @@ function TerminalStat({ label, value, sub, color = "text-white" }: { label: stri
     <div className="space-y-1">
       <span className="block text-[8px] font-black text-foreground/20 tracking-widest uppercase">{label}</span>
       <span className={`block text-lg font-bold font-mono tracking-tighter ${color}`}>{value}</span>
-      <span className="block text-[8px] font-black text-foreground/20 italic uppercase tracking-wider">{sub}</span>
+      <span className="block text-[8px] font-black text-foreground/20 italic tracking-wider">{sub}</span>
     </div>
   );
 }

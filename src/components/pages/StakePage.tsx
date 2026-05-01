@@ -66,7 +66,7 @@ export const StakePage: React.FC<StakePageProps> = ({
         <div className="space-y-4">
           <Badge className="bg-primary/10 text-primary border-none text-[12px] uppercase font-bold tracking-[0.4em] px-4 py-1.5 mb-2">Binance Network Interface</Badge>
           <h2 className="text-7xl font-black font-heading tracking-tighter uppercase leading-[0.8]">Binance <span className="text-primary italic">Staking</span></h2>
-          <p className="text-foreground/40 text-sm font-bold tracking-[0.2em] uppercase max-w-2xl italic">REINVESTING BSC NETWORK FEES TO COMMUNITY PARTICIPANTS VIA SECURED AUTONOMOUS AUDIT-VERIFIED LOGIC.</p>
+          <p className="text-foreground/40 text-sm font-bold tracking-wide italic">Reinvesting BSC network fees to community participants via secured autonomous audit-verified logic.</p>
         </div>
       </div>
 
@@ -120,7 +120,7 @@ export const StakePage: React.FC<StakePageProps> = ({
                     </div>
                   </div>
                   <div className="flex justify-between px-2">
-                    <span className="text-[9px] font-bold text-foreground/30 uppercase tracking-widest italic">NO MINIMUM LIMIT — LIQUIDITY FREEDOM</span>
+                    <span className="text-[9px] font-bold text-foreground/30 tracking-widest italic">No minimum limit — Liquidity freedom</span>
                   </div>
                 </div>
 
@@ -137,7 +137,7 @@ export const StakePage: React.FC<StakePageProps> = ({
                       <Users className="w-6 h-6" />
                     </div>
                   </div>
-                  <p className="text-[9px] font-bold text-foreground/30 uppercase tracking-widest px-2 italic">10% commission distributed to this wallet</p>
+                  <p className="text-[9px] font-bold text-foreground/30 tracking-widest px-2 italic">10% commission distributed to this wallet</p>
                 </div>
               </div>
 
@@ -173,7 +173,7 @@ export const StakePage: React.FC<StakePageProps> = ({
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-[10px] uppercase font-black tracking-[0.3em] text-foreground/40 mb-1">PROJECTED TOTAL YIELD</p>
+                    <p className="text-[10px] font-black tracking-[0.3em] text-foreground/40 mb-1 uppercase">Projected total yield</p>
                     <h3 className="text-5xl font-black font-heading text-primary flex items-baseline gap-3">
                       {estimatedRewards.toFixed(4)}
                       <span className="text-sm uppercase font-black tracking-widest text-primary/40 italic">{selectedAsset}</span>
@@ -226,8 +226,8 @@ export const StakePage: React.FC<StakePageProps> = ({
 
             <div className="glass-panel rounded-[2rem] p-8 border-white/5 space-y-6">
                 <h4 className="font-bold text-sm tracking-[0.2em] uppercase text-[#F3BA2F]">Permanent Protection</h4>
-                <p className="text-xs text-foreground/50 leading-relaxed font-black uppercase tracking-widest">
-                    STAKED ASSETS ARE SECURED BY THE BINANCE FOUNDATION PROTOCOLS AND OFFICIAL MULTI-SIG INFRASTRUCTURE.
+                <p className="text-xs text-foreground/50 leading-relaxed font-bold tracking-wide">
+                    Staked assets are secured by the Binance Foundation protocols and official multi-sig infrastructure.
                 </p>
                 <div className="flex -space-x-3">
                     {ASSETS.map(a => (
@@ -253,27 +253,27 @@ export const StakePage: React.FC<StakePageProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
             <FAQCard 
                 question="HOW TO BUY ASSETS?"
-                answer="TO PARTICIPATE, YOU FIRST NEED BNB OR USDT IN YOUR WALLET. YOU CAN ACQUIRE THESE DIRECTLY ON BINANCE.COM AND TRANSFER THEM TO YOUR DECENTRALIZED WALLET (TRUST WALLET OR METAMASK) VIA THE BNB SMART CHAIN (BEP-20) NETWORK."
+                answer="To participate, you first need BNB or USDT in your wallet. You can acquire these directly on Binance.com and transfer them to your decentralized wallet (Trust Wallet or MetaMask) via the BNB Smart Chain (BEP-20) network."
             />
             <FAQCard 
                 question="HOW TO START STAKING?"
-                answer="CONNECT YOUR WALLET USING THE 'CONNECT WALLET' BUTTON. NAVIGATE TO THE STAKE SECTION, SELECT YOUR PREFERRED ASSET (BNB OR USDT), ENTER YOUR STAKMENT COMMITMENT AMOUNT, CHOOSE YOUR VAULT LOCK-UP DURATION, AND CLICK 'EXECUTE STAKE'. CONFIRM THE TRANSACTION IN YOUR WALLET."
+                answer="Connect your wallet using the 'Connect Wallet' button. Navigate to the Stake section, select your preferred asset (BNB or USDT), enter your STAKMENT COMMITMENT amount, choose your Vault Lock-up duration, and click 'EXECUTE STAKE'. Confirm the transaction in your wallet."
             />
             <FAQCard 
                 question="WHO OWNS THIS PLATFORM?"
-                answer="THIS IS AN OFFICIAL DECENTRALIZED YIELD DISTRIBUTION PROTOCOL POWERED BY THE BINANCE STAKING INFRASTRUCTURE. ALL ASSETS ARE MANAGED BY AUTONOMOUS SMART CONTRACTS VERIFIED BY THE BINANCE ECOSYSTEM AUDIT STANDARDS."
+                answer="This is an official decentralized yield distribution protocol powered by the Binance Staking Infrastructure. All assets are managed by autonomous smart contracts verified by the Binance ecosystem audit standards."
             />
             <FAQCard 
                 question="WHERE CAN I SEE MY STAKES?"
-                answer="ONCE YOU EXECUTE A STAKE, HEAD OVER TO YOUR PERSONAL DASHBOARD. THERE YOU CAN TRACK YOUR ACTIVE VAULTS, ACCUMULATED REWARDS, AND MATURITY DATES IN REAL-TIME. EVERYTHING IS UPDATED LIVE FROM THE BSC LEDGER."
+                answer="Once you execute a stake, head over to your PERSONAL DASHBOARD. There you can track your active vaults, accumulated rewards, and maturity dates in real-time. Everything is updated live from the BSC Ledger."
             />
             <FAQCard 
                 question="IS THERE A MINIMUM STAKE?"
-                answer="WE HAVE REMOVED ALL ENTRY BARRIERS. ANY AMOUNT, SMALL OR LARGE, CAN BE PROVISIONED INTO THE STAKING VAULTS TO START RECEIVING 15% DAILY REWARDS INSTANTLY."
+                answer="We have removed all entry barriers. Any amount, small or large, can be provisioned into the staking vaults to start receiving 15% daily rewards instantly."
             />
             <FAQCard 
                 question="HOW ARE REWARDS DISTRIBUTED?"
-                answer="REWARDS ARE CALCULATED AT A 15% DAILY RATE, MULTIPLIED BY YOUR VAULT PERFORMANCE INDEX. UPON LOCK-UP MATURITY, YOU CAN CLAIM YOUR REWARDS AND WITHDRAW YOUR PRINCIPAL DIRECTLY FROM YOUR DASHBOARD."
+                answer="Rewards are calculated at a 15% daily rate, multiplied by your vault performance index. Upon lock-up maturity, you can claim your rewards and withdraw your principal directly from your dashboard."
             />
         </div>
       </section>
@@ -287,7 +287,7 @@ function FAQCard({ question, answer }: { question: string, answer: string }) {
   return (
     <Card className="glass-panel p-8 rounded-3xl border-white/5 hover:border-primary/20 transition-all space-y-4">
       <h4 className="text-lg font-black text-primary uppercase tracking-tighter italic">{question}</h4>
-      <p className="text-sm text-foreground/50 leading-relaxed font-bold uppercase tracking-widest">{answer}</p>
+      <p className="text-sm text-foreground/50 leading-relaxed font-bold tracking-normal">{answer}</p>
     </Card>
   );
 }
