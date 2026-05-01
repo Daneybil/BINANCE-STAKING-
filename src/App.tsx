@@ -30,11 +30,47 @@ export default function App() {
         setChainId(BigInt(hexChainId));
       };
       (window as any).ethereum.on('chainChanged', handleChainChanged);
+      
+      // Auto-enforce BSC if already connected
+      if (walletAddress && chainId && chainId !== 56n) {
+        switchNetwork();
+      }
+
       return () => {
         (window as any).ethereum.removeListener('chainChanged', handleChainChanged);
       };
     }
-  }, []);
+  }, [walletAddress, chainId]);
+
+  const switchNetwork = async () => {
+    if (typeof window !== 'undefined' && (window as any).ethereum) {
+      try {
+        await (window as any).ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x38' }], // 56 in hex
+        });
+      } catch (switchError: any) {
+        if (switchError.code === 4902) {
+          try {
+            await (window as any).ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [
+                {
+                  chainId: '0x38',
+                  chainName: 'BNB Smart Chain',
+                  nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+                  rpcUrls: ['https://bsc-dataseed.binance.org/'],
+                  blockExplorerUrls: ['https://bscscan.com/'],
+                },
+              ],
+            });
+          } catch (addError) {
+            console.error("Failed to add network", addError);
+          }
+        }
+      }
+    }
+  };
   const [globalStats, setGlobalStats] = useState({
     totalStaked: '500000000',
     totalDeposits: '1800000000',
@@ -83,33 +119,10 @@ export default function App() {
     try {
       const connectedSigner = await connectWallet();
       if (connectedSigner) {
-        // Force network switch to BSC (Chain ID 56)
         const network = await connectedSigner.provider.getNetwork();
+        
         if (network.chainId !== 56n) {
-          try {
-            await (window as any).ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: '0x38' }], // 56 in hex
-            });
-          } catch (switchError: any) {
-            // This error code indicates that the chain has not been added to MetaMask.
-            if (switchError.code === 4902) {
-              await (window as any).ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [
-                  {
-                    chainId: '0x38',
-                    chainName: 'BNB Smart Chain',
-                    nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
-                    rpcUrls: ['https://bsc-dataseed.binance.org/'],
-                    blockExplorerUrls: ['https://bscscan.com/'],
-                  },
-                ],
-              });
-            } else {
-              throw switchError;
-            }
-          }
+          await switchNetwork();
         }
 
         setSigner(connectedSigner);

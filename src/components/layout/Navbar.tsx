@@ -31,13 +31,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <nav className="sticky top-0 z-50 border-b border-white/5 bg-background/80 backdrop-blur-xl">
-      {!contractActive && (
-        <div className="bg-destructive/10 border-b border-destructive/20 py-2 animate-pulse">
-          <div className="container mx-auto px-4 flex justify-center items-center gap-2 text-[10px] font-bold text-destructive uppercase tracking-widest">
-            <span>Withdrawals and Claims are currently locked by the protocol administrator</span>
-          </div>
-        </div>
-      )}
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <div className="flex items-center gap-10">
           <div 
