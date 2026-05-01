@@ -31,9 +31,8 @@ export const StakePage: React.FC<StakePageProps> = ({
   const estimatedRewards = useMemo(() => {
     try {
       const amount = parseFloat(stakeAmount) || 0;
-      const multiplier = (REWARD_MULTIPLIERS as any)[lockDays] || 1;
-      // 15% daily reward calculation
-      return (amount * 0.15 * lockDays * multiplier);
+      // 15% daily reward calculation (flat rate, no multiplier)
+      return (amount * 0.15 * lockDays);
     } catch (e) {
       return 0;
     }
@@ -145,8 +144,8 @@ export const StakePage: React.FC<StakePageProps> = ({
               <div className="space-y-6">
                 <div className="flex items-center justify-between px-1">
                   <label className="text-[10px] uppercase font-black tracking-[0.2em] text-foreground/40">Vault Lock-up Period</label>
-                  <Badge className="bg-primary text-primary-foreground text-[10px] font-black uppercase h-6 px-3">
-                    {REWARD_MULTIPLIERS[lockDays as keyof typeof REWARD_MULTIPLIERS]}x Performance Multiplier
+                  <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black uppercase h-6 px-3">
+                    Fixed 15% Daily Rate
                   </Badge>
                 </div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-11 gap-2">
@@ -161,7 +160,7 @@ export const StakePage: React.FC<StakePageProps> = ({
                       }`}
                     >
                       <span>{days}</span>
-                      <span className="text-[8px] opacity-70">{(REWARD_MULTIPLIERS as any)[days]}X</span>
+                      <span className="text-[8px] opacity-70">DAYS</span>
                     </button>
                   ))}
                 </div>
@@ -273,7 +272,7 @@ export const StakePage: React.FC<StakePageProps> = ({
             />
             <FAQCard 
                 question="HOW ARE REWARDS DISTRIBUTED?"
-                answer="Rewards are calculated at a 15% daily rate, multiplied by your vault performance index. Upon lock-up maturity, you can claim your rewards and withdraw your principal directly from your dashboard."
+                answer="Rewards are calculated at a flat 15% daily rate. Upon lock-up maturity, you can claim your rewards and withdraw your principal directly from your dashboard."
             />
         </div>
       </section>
