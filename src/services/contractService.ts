@@ -71,8 +71,8 @@ const MOCK_STAKES: Stake[] = [
 ];
 
 export const getStakes = async (address: string, signer?: Signer): Promise<Stake[]> => {
-  if (!signer || (BINANCE_STAKE_ADDRESS as string) === "0x0000000000000000000000000000000000000000") {
-    return MOCK_STAKES;
+  if (!signer) {
+    return [];
   }
   
   const contract = getContract(signer);
@@ -92,17 +92,15 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
       };
     });
   } catch (e) {
-    console.error("Contract call failed, using mock data", e);
-    return MOCK_STAKES;
+    console.error("Contract call failed:", e);
+    return [];
   }
 };
 
 export const getLiveStatsFromContract = async (signerOrProvider?: Signer | any) => {
   try {
     const contract = getContract(signerOrProvider);
-    console.log("Fetching live stats from contract:", BINANCE_STAKE_ADDRESS);
     const stats = await contract.getFakeStats();
-    console.log("Contract stats fetched:", stats);
     
     return {
       totalStaked: formatEther(stats.tvl),
@@ -111,8 +109,13 @@ export const getLiveStatsFromContract = async (signerOrProvider?: Signer | any) 
       currentRewardPool: formatEther(stats.rewardPool)
     };
   } catch (e) {
-    console.warn("Blockchain fetch failed, using fallback growth logic:", e);
-    return calculateGrowthStats();
+    console.error("Blockchain fetch failed:", e);
+    return {
+      totalStaked: "0.00",
+      totalDeposits: "0.00",
+      totalRewardsClaimed: "0.00",
+      currentRewardPool: "0.00"
+    };
   }
 };
 
@@ -144,15 +147,10 @@ const calculateGrowthStats = () => {
 };
 
 export const getReferralData = async (signer: Signer, address: string) => {
-  if ((BINANCE_STAKE_ADDRESS as string) === "0x0000000000000000000000000000000000000000") {
-    return {
-      bnbRewards: "0.00",
-      usdtRewards: "0.00"
-    };
-  }
   const contract = getContract(signer);
   const userData = await contract.users(address);
   return {
+    referrer: userData.referrer,
     bnbRewards: formatEther(userData.totalReferralBNB),
     usdtRewards: formatEther(userData.totalReferralUSDT)
   };

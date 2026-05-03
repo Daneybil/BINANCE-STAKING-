@@ -184,14 +184,6 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
   const daysLeft = Math.ceil(timeLeft / (86400 * 1000));
   const lockDays = Math.round(stake.lockDuration / 86400);
   
-  // Calculate multiplier matching contract logic
-  const getMultiplier = (days: number) => {
-    if (days <= 90) return "1.5X";
-    if (days <= 180) return "1.9X";
-    if (days <= 270) return "2.5X";
-    return "3.5X";
-  };
-
   return (
     <div className="glass-panel rounded-3xl p-6 border-white/10 relative overflow-hidden group hover:border-primary/20 transition-all duration-300">
       <div className="space-y-6">
@@ -201,7 +193,7 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
               <img src={asset.icon} alt={asset.title} className="w-8 h-8" />
             </div>
             <div>
-              <h4 className="font-bold text-sm tracking-tight">{asset.title} Vault ({getMultiplier(lockDays)})</h4>
+              <h4 className="font-bold text-sm tracking-tight">{asset.title} Vault (Fixed 15%)</h4>
               <p className="text-[10px] text-foreground/40 uppercase font-black tracking-widest">STAKE ID #{stake.id.toString().padStart(4, '0')}</p>
             </div>
           </div>

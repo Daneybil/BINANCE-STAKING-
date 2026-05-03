@@ -27,6 +27,16 @@ export const StakePage: React.FC<StakePageProps> = ({
   const [lockDays, setLockDays] = useState(60);
   const [refAddress, setRefAddress] = useState('');
   const [isStaking, setIsStaking] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // Auto-detect referral from URL
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref && ref.startsWith('0x') && ref.length === 42) {
+      setRefAddress(ref);
+    }
+  }, []);
 
   const estimatedRewards = useMemo(() => {
     try {
@@ -38,15 +48,19 @@ export const StakePage: React.FC<StakePageProps> = ({
     }
   }, [stakeAmount, lockDays]);
 
-  const handleStake = async () => {
+  const handleStakeClick = () => {
     if (!walletAddress) return onConnect();
     if (!stakeAmount || parseFloat(stakeAmount) <= 0) {
       return toast.error("Invalid Amount", { description: "Please enter a valid amount to stake." });
     }
+    setShowConfirm(true);
+  };
 
+  const executeStake = async () => {
+    setShowConfirm(false);
     setIsStaking(true);
     try {
-      await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress);
+      await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
       toast.success("Transaction Sent", {
         description: `Staking request for ${stakeAmount} ${selectedAsset} broadcasted to network.`,
       });
@@ -61,6 +75,56 @@ export const StakePage: React.FC<StakePageProps> = ({
 
   return (
     <div className="space-y-16 py-12">
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
+          <Card className="glass-panel w-full max-w-lg rounded-[2.5rem] border-white/10 shadow-[0_0_100px_rgba(243,186,47,0.1)] overflow-hidden">
+            <div className="p-10 space-y-8">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
+                  <ShieldCheck className="w-10 h-10" />
+                </div>
+                <h3 className="text-3xl font-black font-heading uppercase italic tracking-tighter">Confirm Execution</h3>
+                <p className="text-sm font-bold text-foreground/50 leading-relaxed tracking-wide">
+                  Please acknowledge that your <span className="text-primary font-black">{stakeAmount} {selectedAsset}</span> will be locked in the Binance protocol for <span className="text-primary font-black">{lockDays} Days</span>.
+                </p>
+              </div>
+
+              <div className="bg-secondary/40 rounded-2xl p-6 space-y-4 border border-white/5">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-foreground/40">
+                  <span>Vault Lock-up</span>
+                  <span className="text-foreground">{lockDays} Days</span>
+                </div>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-foreground/40">
+                  <span>Daily Yield</span>
+                  <span className="text-primary">Flat 15%</span>
+                </div>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-foreground/40">
+                  <span>Maturity Rewards</span>
+                  <span className="text-primary">{estimatedRewards.toFixed(2)} {selectedAsset}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Button 
+                  onClick={executeStake}
+                  className="binance-button h-16 rounded-2xl text-md font-black italic tracking-tighter w-full shadow-lg shadow-primary/20"
+                >
+                  FULLY ACKNOWLEDGE & CONFIRM
+                </Button>
+                <Button 
+                  onClick={() => setShowConfirm(false)}
+                  variant="ghost"
+                  className="h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 hover:text-foreground transition-colors"
+                >
+                  Cancel Operation
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div className="space-y-4">
           <Badge className="bg-primary/10 text-primary border-none text-[12px] uppercase font-bold tracking-[0.4em] px-4 py-1.5 mb-2">Binance Network Interface</Badge>
@@ -184,7 +248,7 @@ export const StakePage: React.FC<StakePageProps> = ({
                   </div>
                 </div>
                 <Button 
-                  onClick={handleStake} 
+                  onClick={handleStakeClick} 
                   disabled={isStaking}
                   className="binance-button h-20 px-12 rounded-[2rem] w-full md:w-auto text-xl font-black tracking-tighter group italic shadow-2xl shadow-primary/20"
                 >

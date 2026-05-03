@@ -23,18 +23,24 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
   onRefresh,
   onConnect
 }) => {
-  const [data, setData] = useState({ bnbRewards: '0.00', usdtRewards: '0.00' });
+  const [data, setData] = useState({ bnbRewards: '0.00', usdtRewards: '0.00', referrer: '0x00...00' });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (walletAddress && signer) {
       fetchReferralData();
+      const interval = setInterval(fetchReferralData, 15000);
+      return () => clearInterval(interval);
     }
   }, [walletAddress, signer]);
 
   const fetchReferralData = async () => {
-    const res = await getReferralData(signer, walletAddress!);
-    setData(res);
+    try {
+      const res = await getReferralData(signer, walletAddress!);
+      setData(res as any);
+    } catch (e) {
+      console.error("Failed to fetch referral data", e);
+    }
   };
 
   const handleWithdraw = async (token: string) => {
@@ -157,10 +163,10 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <PartnerMetric label="Total Referrals" value="0" />
-                        <PartnerMetric label="Active Stakes" value="0" />
-                        <PartnerMetric label="Total Earned" value="$0.00" />
-                        <PartnerMetric label="Global Rank" value="#--" />
+                        <PartnerMetric label="Earned BNB" value={data.bnbRewards} />
+                        <PartnerMetric label="Earned USDT" value={data.usdtRewards} />
+                        <PartnerMetric label="Network" value="BSC" />
+                        <PartnerMetric label="My Referrer" value={data.referrer !== '0x0000000000000000000000000000000000000000' ? `${data.referrer.slice(0, 6)}...` : 'None'} />
                     </div>
 
                     <div className="pt-10 border-t border-white/5 space-y-6">

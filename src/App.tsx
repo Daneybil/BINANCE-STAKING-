@@ -11,6 +11,9 @@ import { DashboardPage } from './components/pages/DashboardPage';
 import { StakePage } from './components/pages/StakePage';
 import { StatsPage } from './components/pages/StatsPage';
 import { ReferralPage } from './components/pages/ReferralPage';
+import { PrivacyPage } from './components/pages/PrivacyPage';
+import { TermsPage } from './components/pages/TermsPage';
+import { RiskPage } from './components/pages/RiskPage';
 import { Logo } from '@/src/components/ui/Logo';
 import { Twitter, Instagram, Facebook, Globe, Activity } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -72,16 +75,16 @@ export default function App() {
     }
   };
   const [globalStats, setGlobalStats] = useState({
-    totalStaked: '500000000',
-    totalDeposits: '1800000000',
-    totalRewardsClaimed: '700000000',
-    currentRewardPool: '250000000'
+    totalStaked: '0.00',
+    totalDeposits: '0.00',
+    totalRewardsClaimed: '0.00',
+    currentRewardPool: '0.00'
   });
 
   // Initial data fetch and polling
   useEffect(() => {
     refreshGlobalStats();
-    const statsInterval = setInterval(refreshGlobalStats, 15000);
+    const statsInterval = setInterval(refreshGlobalStats, 10000);
     return () => clearInterval(statsInterval);
   }, [signer]);
 
@@ -166,6 +169,12 @@ export default function App() {
             onConnect={handleConnect}
           />
         );
+      case 'privacy':
+        return <PrivacyPage />;
+      case 'terms':
+        return <TermsPage />;
+      case 'risk':
+        return <RiskPage />;
       case 'stats':
         return <StatsPage signer={signer} initialStats={globalStats} />;
       case 'referral':
@@ -227,12 +236,12 @@ export default function App() {
               <p className="text-[16px] text-foreground/40 leading-relaxed uppercase tracking-[0.2em] font-black max-w-sm">
                 THE GLOBAL STANDARD FOR SECURE PROOF-OF-STAKE REWARDS POWERED BY BINANCE INFRASTRUCTURE.
               </p>
-              <div className="flex items-center gap-6">
-                <a href="https://x.com/binance" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/5 rounded-full transition-colors"><Twitter className="w-6 h-6 hover:text-primary transition-colors" /></a>
-                <a href="https://instagram.com/binance" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/5 rounded-full transition-colors"><Instagram className="w-6 h-6 hover:text-primary transition-colors" /></a>
-                <a href="https://facebook.com/binance" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/5 rounded-full transition-colors"><Facebook className="w-6 h-6 hover:text-primary transition-colors" /></a>
-                <a href="https://www.binance.com" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/5 rounded-full transition-colors"><Globe className="w-6 h-6 hover:text-primary transition-colors" /></a>
-              </div>
+            <div className="flex items-center gap-6">
+              <a href="https://twitter.com/binance" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/5 rounded-full transition-colors"><Twitter className="w-6 h-6 hover:text-primary transition-colors" /></a>
+              <a href="https://instagram.com/binance" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/5 rounded-full transition-colors"><Instagram className="w-6 h-6 hover:text-primary transition-colors" /></a>
+              <a href="https://facebook.com/binance" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/5 rounded-full transition-colors"><Facebook className="w-6 h-6 hover:text-primary transition-colors" /></a>
+              <a href="https://www.binance.com" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/5 rounded-full transition-colors"><Globe className="w-6 h-6 hover:text-primary transition-colors" /></a>
+            </div>
             </div>
 
             <FooterLinks title="Products" links={[
@@ -258,9 +267,9 @@ export default function App() {
           <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
             <p className="text-[9px] font-bold text-foreground/20 uppercase tracking-[0.3em]">© 2024 BINANCE STAKE ECOSYSTEM. POWERED BY DECENTRALIZED PROTOCOLS.</p>
             <div className="flex items-center gap-8 text-[9px] font-bold text-foreground/20 uppercase tracking-[0.3em]">
-              <a href="#" className="hover:text-foreground/40 transition-colors">Privacy</a>
-              <a href="#" className="hover:text-foreground/40 transition-colors">Terms</a>
-              <a href="#" className="hover:text-foreground/40 transition-colors">Risk Disclosure</a>
+              <button onClick={() => { setCurrentPage('privacy'); window.scrollTo(0,0); }} className="hover:text-foreground/40 transition-colors uppercase">Privacy</button>
+              <button onClick={() => { setCurrentPage('terms'); window.scrollTo(0,0); }} className="hover:text-foreground/40 transition-colors uppercase">Terms</button>
+              <button onClick={() => { setCurrentPage('risk'); window.scrollTo(0,0); }} className="hover:text-foreground/40 transition-colors uppercase">Risk Disclosure</button>
             </div>
           </div>
         </div>
