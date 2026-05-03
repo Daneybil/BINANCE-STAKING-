@@ -77,22 +77,31 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
   
   const contract = getContract(signer);
   try {
+    console.log("Fetching stakes for address:", address);
     const rawStakes = await contract.getUserStakes(address);
+    if (!rawStakes || !Array.isArray(rawStakes)) {
+        console.warn("Raw stakes is not an array:", rawStakes);
+        return [];
+    }
+
     return rawStakes.map((s: any, index: number) => {
-      const tokenInfo = ASSETS.find(a => a.address.toLowerCase() === s.token.toLowerCase()) || ASSETS[0];
+      // Safety check for token address
+      const tokenAddr = s.token || s[5] || "0x0000000000000000000000000000000000000000";
+      const tokenInfo = ASSETS.find(a => a.address.toLowerCase() === tokenAddr.toLowerCase()) || ASSETS[0];
+      
       return {
         id: index,
-        amount: formatEther(s.amount),
-        startTime: Number(s.startTime) * 1000,
-        lockDuration: Number(s.lockDuration),
-        accumulatedRewards: formatEther(s.accumulatedRewards),
-        claimed: s.claimed,
-        token: s.token,
+        amount: formatEther(s.amount || s[0] || 0),
+        startTime: Number(s.startTime || s[1] || 0) * 1000,
+        lockDuration: Number(s.lockDuration || s[2] || 0),
+        accumulatedRewards: formatEther(s.accumulatedRewards || s[3] || 0),
+        claimed: !!(s.claimed || s[4]),
+        token: tokenAddr,
         tokenSymbol: tokenInfo.id
       };
     });
   } catch (e) {
-    console.error("Contract call failed:", e);
+    console.error("Contract call getUserStakes failed:", e);
     return [];
   }
 };

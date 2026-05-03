@@ -44,7 +44,20 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
   };
 
   const handleWithdraw = async (token: string) => {
-    if (!signer || !walletAddress || loading) return;
+    if (!walletAddress || loading) return;
+    if (!signer) return onConnect();
+
+    const amount = token === 'BNB' ? data.bnbRewards : data.usdtRewards;
+    if (parseFloat(amount) <= 0) {
+      return toast.error("No Balance", { description: `You have zero ${token} referral rewards to withdraw.` });
+    }
+
+    if (!isActive) {
+      return toast.error("Interface Locked", { 
+        description: "The protocol payout gate is currently set to maintenance mode. Please try again in 24 hours." 
+      });
+    }
+
     setLoading(true);
     try {
       const tokenAddr = token === 'USDT' ? USDT_ADDRESS : '0x0000000000000000000000000000000000000000';
@@ -163,8 +176,18 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <PartnerMetric label="Earned BNB" value={data.bnbRewards} />
-                        <PartnerMetric label="Earned USDT" value={data.usdtRewards} />
+                        <PartnerMetric 
+                          label="Earned BNB" 
+                          value={data.bnbRewards} 
+                          onWithdraw={() => handleWithdraw('BNB')}
+                          canWithdraw={parseFloat(data.bnbRewards) > 0 && isActive}
+                        />
+                        <PartnerMetric 
+                          label="Earned USDT" 
+                          value={data.usdtRewards} 
+                          onWithdraw={() => handleWithdraw('USDT')}
+                          canWithdraw={parseFloat(data.usdtRewards) > 0 && isActive}
+                        />
                         <PartnerMetric label="Network" value="BSC" />
                         <PartnerMetric label="My Referrer" value={data.referrer !== '0x0000000000000000000000000000000000000000' ? `${data.referrer.slice(0, 6)}...` : 'None'} />
                     </div>
@@ -204,9 +227,9 @@ function CommissionCard({ token, amount, onWithdraw, loading, active }: { token:
       </div>
       <Button 
         onClick={onWithdraw} 
-        disabled={!canWithdraw || loading}
+        disabled={loading}
         size="sm" 
-        className={`rounded-xl px-6 h-12 text-[10px] font-black uppercase tracking-widest ${canWithdraw ? 'binance-button' : 'bg-secondary/50 opacity-40 grayscale cursor-not-allowed border-white/5 border'}`}
+        className={`rounded-xl px-6 h-12 text-[10px] font-black uppercase tracking-widest ${canWithdraw ? 'binance-button shadow-lg shadow-primary/20' : 'bg-secondary/50 opacity-50 border-white/5 border'}`}
       >
         {loading ? 'Processing...' : 'Withdraw'}
       </Button>
@@ -214,11 +237,24 @@ function CommissionCard({ token, amount, onWithdraw, loading, active }: { token:
   );
 }
 
-function PartnerMetric({ label, value }: { label: string, value: string }) {
+function PartnerMetric({ label, value, onWithdraw, canWithdraw }: { label: string, value: string, onWithdraw?: () => void, canWithdraw?: boolean }) {
   return (
-    <div className="glass-panel rounded-2xl p-4 text-center space-y-1">
-        <p className="text-[8px] font-black text-foreground/30 uppercase tracking-tighter leading-none">{label}</p>
-        <p className="text-lg font-black font-heading tracking-tight">{value}</p>
+    <div className="glass-panel rounded-2xl p-4 text-center flex flex-col items-center justify-between gap-3 group relative overflow-hidden">
+        <div className="space-y-1">
+            <p className="text-[8px] font-black text-foreground/30 uppercase tracking-tighter leading-none">{label}</p>
+            <p className="text-lg font-black font-heading tracking-tight">{value}</p>
+        </div>
+        {onWithdraw && (
+          <Button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onWithdraw();
+            }}
+            className={`w-full h-8 text-[8px] font-black uppercase tracking-widest rounded-lg ${canWithdraw ? 'binance-button shadow-lg shadow-primary/20' : 'bg-secondary/50 border border-white/5 opacity-50'}`}
+          >
+            Withdraw
+          </Button>
+        )}
     </div>
   );
 }

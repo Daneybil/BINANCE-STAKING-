@@ -86,8 +86,25 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </h3>
             
             {stakes.length === 0 ? (
-              <div className="glass-panel border-white/5 rounded-[3rem] p-20 text-center animate-pulse">
-                <p className="text-foreground/40 font-bold tracking-[0.1em] text-xs">No active staking data found for this address</p>
+              <div className="glass-panel border-white/5 rounded-[3rem] p-32 text-center space-y-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-primary/2 rounded-full blur-[100px] -z-10" />
+                <div className="flex flex-col items-center space-y-6">
+                  <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center text-foreground/20">
+                    <Inbox className="w-10 h-10" />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-xl font-bold uppercase tracking-widest text-foreground/60">No Active Positions Detected</h4>
+                    <p className="text-[10px] text-foreground/30 font-black uppercase tracking-[0.2em] max-w-xs mx-auto">
+                      Transactions may take up to 60 seconds to index on the BSC ledger.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={onRefresh} 
+                    className="binance-button h-12 px-10 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                  >
+                    Force Sync Ledger
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

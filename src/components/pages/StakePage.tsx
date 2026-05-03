@@ -60,12 +60,21 @@ export const StakePage: React.FC<StakePageProps> = ({
     setShowConfirm(false);
     setIsStaking(true);
     try {
-      await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
-      toast.success("Transaction Sent", {
-        description: `Staking request for ${stakeAmount} ${selectedAsset} broadcasted to network.`,
+      const tx = await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
+      
+      const promise = tx.wait().then((receipt: any) => {
+        onRefresh();
+        return receipt;
       });
+
+      toast.promise(promise, {
+        loading: `Sending ${stakeAmount} ${selectedAsset} to Binance Vault...`,
+        success: 'Staking successful! Your portfolio is updating.',
+        error: 'Failed to confirm staking transaction.'
+      });
+
+      await promise;
       setStakeAmount('');
-      onRefresh();
     } catch (error: any) {
       toast.error("Staking Failed", { description: error.message });
     } finally {
