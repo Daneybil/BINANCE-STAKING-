@@ -1,8 +1,8 @@
 import React from 'react';
-import { Wallet, History, Coins, BarChart3, TrendingUp, Inbox } from 'lucide-react';
+import { Wallet, History, Coins, BarChart3, TrendingUp, Inbox, Share2, ArrowUpRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Stake } from '@/src/services/contractService';
+import { Stake, withdrawReferral, getReferralData } from '@/src/services/contractService';
 import { ASSETS } from '@/src/lib/constants';
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -25,7 +25,44 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onConnect
 }) => {
   const [liveTotalRewards, setLiveTotalRewards] = React.useState(0);
+  const [referralData, setReferralData] = React.useState({ bnbRewards: "0", usdtRewards: "0", wbnbRewards: "0", referrer: "" });
+  const [loading, setLoading] = React.useState(false);
+
   const totalStakedValue = stakes.reduce((acc, s) => acc + parseFloat(s.amount), 0);
+
+  const fetchReferral = async () => {
+    if (signer && walletAddress) {
+      const data = await getReferralData(signer, walletAddress);
+      setReferralData(data as any);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchReferral();
+  }, [signer, walletAddress]);
+
+  const handleWithdrawReferral = async (assetId: string) => {
+    if (!signer || loading) return;
+    setLoading(true);
+    try {
+      const asset = ASSETS.find(a => a.id === assetId);
+      if (!asset) return;
+      
+      const tx = await withdrawReferral(signer, asset.address);
+      toast.promise(tx.wait(), {
+        loading: `Withdrawal of ${assetId} referral rewards in progress...`,
+        success: 'Referral rewards successfully claimed!',
+        error: 'Failed to withdraw referral rewards.'
+      });
+      await tx.wait();
+      fetchReferral();
+      onRefresh();
+    } catch (e: any) {
+      toast.error('Withdrawal failed', { description: e.message });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   React.useEffect(() => {
     if (stakes.length === 0) {
@@ -35,13 +72,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
     const calculateTotal = () => {
       const now = Date.now();
-      const dailyRate = 0.15;
+      const dailyRate = 0.15; // 15% Daily Yield
       
       const total = stakes.reduce((acc, stake) => {
         const amount = parseFloat(stake.amount);
-        const elapsedSinceStart = (now - stake.startTime) / 1000;
-        const totalEarnedSimple = (amount * dailyRate * elapsedSinceStart) / 86400;
-        return acc + Math.max(parseFloat(stake.accumulatedRewards), totalEarnedSimple);
+        const startTime = stake.startTime; // in ms
+        const elapsedSeconds = (now - startTime) / 1000;
+        
+        // Simple daily yield calculation: amount * 0.15 * (elapsed / 86400)
+        const earned = (amount * dailyRate * elapsedSeconds) / 86400;
+        
+        // Return max of contract reported and our real-time calculation
+        return acc + Math.max(parseFloat(stake.accumulatedRewards), earned);
       }, 0);
       
       setLiveTotalRewards(total);
@@ -105,6 +147,42 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             />
           </div>
 
+          {/* Referral Section */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold uppercase tracking-tight flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-primary" /> Referral Rewards Center
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <ReferralCard 
+                label="BNB Rewards" 
+                balance={referralData.bnbRewards} 
+                symbol="BNB"
+                onWithdraw={() => handleWithdrawReferral('BNB')}
+                loading={loading}
+              />
+              <ReferralCard 
+                label="WBNB Rewards" 
+                balance={referralData.wbnbRewards} 
+                symbol="WBNB"
+                onWithdraw={() => handleWithdrawReferral('WBNB')}
+                loading={loading}
+              />
+              <ReferralCard 
+                label="USDT Rewards" 
+                balance={referralData.usdtRewards} 
+                symbol="USDT"
+                onWithdraw={() => handleWithdrawReferral('USDT')}
+                loading={loading}
+              />
+            </div>
+            {referralData.referrer !== "0x0000000000000000000000000000000000000000" && (
+              <div className="flex items-center gap-2 px-6 text-foreground/30 text-[10px] font-black uppercase tracking-widest">
+                <Badge variant="outline" className="border-white/5 text-foreground/30 py-0.5 px-2">Referrer Active</Badge>
+                <span>{referralData.referrer}</span>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-6">
             <h3 className="text-xl font-bold uppercase tracking-tight flex items-center gap-2">
               <Inbox className="w-5 h-5 text-primary" /> Active Binance Vault Positions
@@ -145,6 +223,41 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   );
 };
 
+function ReferralCard({ label, balance, symbol, onWithdraw, loading }: { label: string, balance: string, symbol: string, onWithdraw: () => void, loading: boolean }) {
+  const hasBalance = parseFloat(balance) > 0;
+  return (
+    <div className="glass-panel rounded-3xl p-8 border-white/10 relative overflow-hidden group hover:border-primary/20 transition-all duration-300">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center border border-white/5">
+              <TrendingUp className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-[10px] font-bold text-foreground/40 uppercase tracking-[0.2em]">{label}</span>
+          </div>
+          {hasBalance && (
+            <Badge className="bg-green-500/10 text-green-500 border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5">Withdrawable</Badge>
+          )}
+        </div>
+        <div>
+          <h4 className="text-3xl font-black font-heading text-white">{balance} <span className="text-xs text-foreground/40">{symbol}</span></h4>
+        </div>
+        <Button 
+          disabled={!hasBalance || loading}
+          onClick={onWithdraw}
+          className={`w-full h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${hasBalance ? 'binance-button' : 'bg-secondary/50 cursor-not-allowed opacity-30 grayscale'}`}
+        >
+          {loading ? 'Processing...' : (
+            <>
+              Withdraw Reward <ArrowUpRight className="w-3 h-3 ml-2" />
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function SummaryCard({ label, value, unit, icon, success }: { label: string, value: string, unit: string, icon: React.ReactNode, success?: boolean }) {
   return (
     <div className="glass-panel rounded-3xl p-8 border-white/5 relative overflow-hidden group">
@@ -180,14 +293,17 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
   
   React.useEffect(() => {
     const amount = parseFloat(stake.amount);
-    const dailyRate = 0.15;
+    const dailyRate = 0.15; // 15% Daily Yield
     
     const ticker = setInterval(() => {
       const now = Date.now();
-      const elapsedSinceStart = (now - stake.startTime) / 1000;
-      const totalEarnedSimple = (amount * dailyRate * elapsedSinceStart) / 86400;
+      const startTime = stake.startTime; // in ms
+      const elapsedSeconds = (now - startTime) / 1000;
       
-      setLiveRewards(Math.max(parseFloat(stake.accumulatedRewards), totalEarnedSimple));
+      // Simple daily yield calculation: amount * 0.15 * (elapsed / 86400)
+      const earned = (amount * dailyRate * elapsedSeconds) / 86400;
+      
+      setLiveRewards(Math.max(parseFloat(stake.accumulatedRewards), earned));
     }, 100);
 
     return () => clearInterval(ticker);

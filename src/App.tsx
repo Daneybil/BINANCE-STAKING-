@@ -84,7 +84,7 @@ export default function App() {
   // Initial data fetch and polling
   useEffect(() => {
     refreshGlobalStats();
-    const statsInterval = setInterval(refreshGlobalStats, 10000);
+    const statsInterval = setInterval(refreshGlobalStats, 1000); // 1s poll for smooth growth
     return () => clearInterval(statsInterval);
   }, [signer]);
 
@@ -113,6 +113,7 @@ export default function App() {
       ]);
       setStakes(fetchedStakes);
       setContractActive(active);
+      refreshGlobalStats(); // Also refresh global stats
     } catch (e) {
       console.error("Data refresh failed", e);
     }

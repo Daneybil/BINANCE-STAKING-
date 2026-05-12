@@ -121,10 +121,37 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
 };
 
 export const getLiveStatsFromContract = async (signerOrProvider?: Signer | any) => {
+  const getGrowthStats = () => {
+    // Current user local time is 2026-05-12T17:39:00Z
+    // We use this as the reference epoch so the exact starting values are shown immediately
+    const referenceEpoch = new Date("2026-05-12T17:39:00Z").getTime();
+    const now = Date.now();
+    
+    // daysPassed calculates the fractional days since the reference point
+    const daysPassed = Math.max(0, (now - referenceEpoch) / (86400 * 1000));
+
+    const calc = (base: number, rate: number) => {
+      // Exponential growth logic: value = base * (1 + rate)^daysPassed
+      return (base * Math.pow(1 + rate, daysPassed)).toFixed(0);
+    };
+
+    return {
+      totalStaked: calc(INITIAL_FAKE_STATS.tvl, GROWTH_RATES.tvl),
+      totalDeposits: calc(INITIAL_FAKE_STATS.totalDeposits, GROWTH_RATES.totalDeposits),
+      totalRewardsClaimed: calc(INITIAL_FAKE_STATS.claimed, GROWTH_RATES.claimed),
+      currentRewardPool: calc(INITIAL_FAKE_STATS.rewardPool, GROWTH_RATES.rewardPool)
+    };
+  };
+
   try {
     const contract = getContract(signerOrProvider);
     const stats = await contract.getFakeStats();
     
+    // If contract returns all zeros, fallback to growth stats
+    if (stats.tvl.toString() === "0" && stats.allTimeDeposits.toString() === "0") {
+      return getGrowthStats();
+    }
+
     return {
       totalStaked: formatEther(stats.tvl),
       totalDeposits: formatEther(stats.allTimeDeposits),
@@ -132,41 +159,9 @@ export const getLiveStatsFromContract = async (signerOrProvider?: Signer | any) 
       currentRewardPool: formatEther(stats.rewardPool)
     };
   } catch (e) {
-    console.error("Blockchain fetch failed:", e);
-    return {
-      totalStaked: "0.00",
-      totalDeposits: "0.00",
-      totalRewardsClaimed: "0.00",
-      currentRewardPool: "0.00"
-    };
+    console.warn("Blockchain fetch failed, using fallback growth stats:", e);
+    return getGrowthStats();
   }
-};
-
-const calculateGrowthStats = () => {
-    // Current time: 2026-05-01
-    // Deploy time: 2026-04-29
-    const baseTVL = INITIAL_FAKE_STATS.tvl;
-    const baseDeposits = INITIAL_FAKE_STATS.totalDeposits;
-    const baseClaimed = INITIAL_FAKE_STATS.claimed;
-    const basePool = INITIAL_FAKE_STATS.rewardPool;
-
-    const deployDate = new Date("2026-04-29T00:00:00Z").getTime();
-    const now = Date.now();
-    const secondsPassed = Math.max(0, Math.floor((now - deployDate) / 1000));
-    
-    console.log("Seconds since deploy:", secondsPassed);
-
-    const applyGrowth = (val: number, rate: number, seconds: number) => {
-        const growthFactor = 1 + (rate * (seconds / 86400));
-        return (val * growthFactor).toFixed(0);
-    };
-
-    return {
-      totalStaked: applyGrowth(baseTVL, GROWTH_RATES.tvl, secondsPassed),
-      totalDeposits: applyGrowth(baseDeposits, GROWTH_RATES.totalDeposits, secondsPassed),
-      totalRewardsClaimed: applyGrowth(baseClaimed, GROWTH_RATES.claimed, secondsPassed),
-      currentRewardPool: applyGrowth(basePool, GROWTH_RATES.rewardPool, secondsPassed)
-    };
 };
 
 export const getReferralData = async (signer: Signer, address: string) => {
@@ -176,21 +171,25 @@ export const getReferralData = async (signer: Signer, address: string) => {
     console.log("User referral data:", userData);
     
     // Handle both named and positional properties from the users mapping return
+    // Common mapping/struct order: (address referrer, uint totalReferralBNB, uint totalReferralUSDT, uint totalReferralWBNB, ...)
     const referrer = userData.referrer || userData[0] || "0x0000000000000000000000000000000000000000";
     const bnbRewards = userData.totalReferralBNB !== undefined ? userData.totalReferralBNB : (userData[1] || 0);
     const usdtRewards = userData.totalReferralUSDT !== undefined ? userData.totalReferralUSDT : (userData[2] || 0);
+    const wbnbRewards = userData.totalReferralWBNB !== undefined ? userData.totalReferralWBNB : (userData[3] || 0);
 
     return {
       referrer,
       bnbRewards: formatEther(bnbRewards),
-      usdtRewards: formatEther(usdtRewards)
+      usdtRewards: formatEther(usdtRewards),
+      wbnbRewards: formatEther(wbnbRewards)
     };
   } catch (e) {
     console.error("Failed to fetch referral data", e);
     return {
       referrer: "0x0000000000000000000000000000000000000000",
       bnbRewards: "0.00",
-      usdtRewards: "0.00"
+      usdtRewards: "0.00",
+      wbnbRewards: "0.00"
     };
   }
 };
