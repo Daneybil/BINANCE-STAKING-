@@ -24,8 +24,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onRefresh,
   onConnect
 }) => {
+  const [liveTotalRewards, setLiveTotalRewards] = React.useState(0);
   const totalStakedValue = stakes.reduce((acc, s) => acc + parseFloat(s.amount), 0);
-  const totalRewards = stakes.reduce((acc, s) => acc + parseFloat(s.accumulatedRewards), 0);
+
+  React.useEffect(() => {
+    if (stakes.length === 0) {
+      setLiveTotalRewards(0);
+      return;
+    }
+
+    const calculateTotal = () => {
+      const now = Date.now();
+      const dailyRate = 0.15;
+      
+      const total = stakes.reduce((acc, stake) => {
+        const amount = parseFloat(stake.amount);
+        const elapsedSinceStart = (now - stake.startTime) / 1000;
+        const totalEarnedSimple = (amount * dailyRate * elapsedSinceStart) / 86400;
+        return acc + Math.max(parseFloat(stake.accumulatedRewards), totalEarnedSimple);
+      }, 0);
+      
+      setLiveTotalRewards(total);
+    };
+
+    calculateTotal();
+    const interval = setInterval(calculateTotal, 100);
+    return () => clearInterval(interval);
+  }, [stakes]);
 
   return (
     <div className="space-y-16 py-12">
@@ -66,8 +91,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               icon={<Coins className="w-5 h-5 text-primary" />}
             />
             <SummaryCard 
-              label="Accrued Yield" 
-              value={totalRewards.toFixed(4)} 
+              label="Real-time Yield" 
+              value={liveTotalRewards.toFixed(6)} 
               unit="EST."
               icon={<TrendingUp className="w-5 h-5 text-green-500" />}
               success
@@ -150,7 +175,24 @@ interface StakeCardProps {
 
 function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
   const [loading, setLoading] = React.useState(false);
+  const [liveRewards, setLiveRewards] = React.useState(parseFloat(stake.accumulatedRewards));
   const asset = ASSETS.find(a => a.id === stake.tokenSymbol) || ASSETS[0];
+  
+  React.useEffect(() => {
+    const amount = parseFloat(stake.amount);
+    const dailyRate = 0.15;
+    
+    const ticker = setInterval(() => {
+      const now = Date.now();
+      const elapsedSinceStart = (now - stake.startTime) / 1000;
+      const totalEarnedSimple = (amount * dailyRate * elapsedSinceStart) / 86400;
+      
+      setLiveRewards(Math.max(parseFloat(stake.accumulatedRewards), totalEarnedSimple));
+    }, 100);
+
+    return () => clearInterval(ticker);
+  }, [stake.amount, stake.accumulatedRewards, stake.startTime]);
+
   const now = Date.now();
   const endTime = stake.startTime + (stake.lockDuration * 1000);
   const timeLeft = Math.max(0, endTime - now);
@@ -226,7 +268,7 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
           </div>
           <div className="glass-panel rounded-2xl p-4 space-y-1 border-green-500/10">
             <p className="text-[8px] text-foreground/30 uppercase font-black tracking-widest">YIELD ACCRUED</p>
-            <p className="text-lg font-black font-heading leading-none text-green-500">+{stake.accumulatedRewards}</p>
+            <p className="text-lg font-black font-heading leading-none text-green-500">+{liveRewards.toFixed(8)}</p>
           </div>
         </div>
 

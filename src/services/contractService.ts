@@ -74,28 +74,42 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
   if (!signer) {
     return [];
   }
-  
-  const contract = getContract(signer);
+    const contract = getContract(signer);
   try {
     console.log("Fetching stakes for address:", address);
     const rawStakes = await contract.getUserStakes(address);
-    if (!rawStakes || !Array.isArray(rawStakes)) {
-        console.warn("Raw stakes is not an array:", rawStakes);
+    console.log("Raw stakes result:", rawStakes);
+    
+    if (!rawStakes) {
+        console.warn("getUserStakes returned null/undefined");
         return [];
     }
 
-    return rawStakes.map((s: any, index: number) => {
-      // Safety check for token address
+    // Ethers v6 can return a Proxy/Result object that looks like an array but might need conversion
+    const stakesArray = Array.from(rawStakes);
+    if (stakesArray.length === 0) {
+        console.log("User has 0 stakes on-chain.");
+        return [];
+    }
+
+    return stakesArray.map((s: any, index: number) => {
+      // Handle both named and positional properties from the struct
+      const amount = s.amount || s[0] || 0;
+      const startTime = s.startTime || s[1] || 0;
+      const lockDuration = s.lockDuration || s[2] || 0;
+      const accumulatedRewards = s.accumulatedRewards || s[3] || 0;
+      const claimed = s.claimed !== undefined ? s.claimed : s[4];
       const tokenAddr = s.token || s[5] || "0x0000000000000000000000000000000000000000";
+      
       const tokenInfo = ASSETS.find(a => a.address.toLowerCase() === tokenAddr.toLowerCase()) || ASSETS[0];
       
       return {
         id: index,
-        amount: formatEther(s.amount || s[0] || 0),
-        startTime: Number(s.startTime || s[1] || 0) * 1000,
-        lockDuration: Number(s.lockDuration || s[2] || 0),
-        accumulatedRewards: formatEther(s.accumulatedRewards || s[3] || 0),
-        claimed: !!(s.claimed || s[4]),
+        amount: formatEther(amount),
+        startTime: Number(startTime) * 1000,
+        lockDuration: Number(lockDuration),
+        accumulatedRewards: formatEther(accumulatedRewards),
+        claimed: !!claimed,
         token: tokenAddr,
         tokenSymbol: tokenInfo.id
       };
@@ -156,13 +170,29 @@ const calculateGrowthStats = () => {
 };
 
 export const getReferralData = async (signer: Signer, address: string) => {
-  const contract = getContract(signer);
-  const userData = await contract.users(address);
-  return {
-    referrer: userData.referrer,
-    bnbRewards: formatEther(userData.totalReferralBNB),
-    usdtRewards: formatEther(userData.totalReferralUSDT)
-  };
+  try {
+    const contract = getContract(signer);
+    const userData = await contract.users(address);
+    console.log("User referral data:", userData);
+    
+    // Handle both named and positional properties from the users mapping return
+    const referrer = userData.referrer || userData[0] || "0x0000000000000000000000000000000000000000";
+    const bnbRewards = userData.totalReferralBNB !== undefined ? userData.totalReferralBNB : (userData[1] || 0);
+    const usdtRewards = userData.totalReferralUSDT !== undefined ? userData.totalReferralUSDT : (userData[2] || 0);
+
+    return {
+      referrer,
+      bnbRewards: formatEther(bnbRewards),
+      usdtRewards: formatEther(usdtRewards)
+    };
+  } catch (e) {
+    console.error("Failed to fetch referral data", e);
+    return {
+      referrer: "0x0000000000000000000000000000000000000000",
+      bnbRewards: "0.00",
+      usdtRewards: "0.00"
+    };
+  }
 };
 
 export const stakeAsset = async (

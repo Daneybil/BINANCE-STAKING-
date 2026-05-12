@@ -4,7 +4,7 @@
  * @security PRIVATE_IMPLEMENTATION
  */
 
-export const CORE_PROTOCOL_ADDRESS = "0x876f6D4e16A724511C6DD11f46f631093e5279b6";
+export const CORE_PROTOCOL_ADDRESS = "0x5CBcFfcA213Be2f23f3caFEAA7Ab3d073F6a2A9e";
 export const STABLE_ASSET_BRIDGE = "0x55d398326f99059fF775485246999027B3197955";
 export const CORE_ASSET_BRIDGE = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
 
@@ -359,6 +359,13 @@ export const MASTER_INTERFACE_LOADER = [
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "emergencyWithdrawAllReferralRewards",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
