@@ -11,6 +11,7 @@ interface DashboardPageProps {
   walletAddress: string | null;
   stakes: Stake[];
   dataLoading: boolean;
+  isRefreshing?: boolean;
   signer: any;
   isActive: boolean;
   onRefresh: () => void;
@@ -21,6 +22,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   walletAddress, 
   stakes, 
   dataLoading,
+  isRefreshing,
   signer, 
   isActive, 
   onRefresh,
@@ -72,6 +74,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     }
   };
 
+  const getMultiplier = (lockDurationSeconds: number) => {
+    const days = lockDurationSeconds / 86400;
+    if (days <= 90) return 1.5;
+    if (days <= 180) return 1.9;
+    if (days <= 270) return 2.5;
+    return 3.5;
+  };
+
   React.useEffect(() => {
     if (stakes.length === 0) {
       setLiveTotalRewards(0);
@@ -80,17 +90,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
     const calculateTotal = () => {
       const now = Date.now();
-      const dailyRate = DAILY_REWARD_RATE; // 15% Daily Yield
+      const dailyRate = 0.15; // 15% Daily Base Yield
       
       const total = stakes.reduce((acc, stake) => {
         const amount = parseFloat(stake.amount);
         const startTime = stake.startTime; // in ms
         const elapsedSeconds = (now - startTime) / 1000;
         
-        // Simple daily yield calculation: amount * 0.15 * (elapsed / 86400)
-        const earned = (amount * dailyRate * elapsedSeconds) / 86400;
+        const multiplier = getMultiplier(stake.lockDuration);
         
-        // Return max of contract reported and our real-time calculation
+        // Comprehensive daily yield calculation: amount * 15% * multiplier * (elapsed / 86400)
+        const earned = (amount * dailyRate * multiplier * elapsedSeconds) / 86400;
+        
         return acc + Math.max(parseFloat(stake.accumulatedRewards), earned);
       }, 0);
       
@@ -113,7 +124,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         
         {walletAddress && (
           <Button variant="outline" size="sm" onClick={onRefresh} className="border-white/10 bg-secondary/30 rounded-xl h-12 px-6 text-[10px] font-bold tracking-widest hover:bg-secondary">
-            <History className="w-4 h-4 mr-2" /> REFRESH PORTFOLIO
+             {isRefreshing ? (
+               <div className="flex items-center">
+                 <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+                 SYNCING...
+               </div>
+             ) : (
+               <>
+                 <History className="w-4 h-4 mr-2" /> REFRESH PORTFOLIO
+               </>
+             )}
           </Button>
         )}
       </div>
@@ -308,21 +328,32 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
   
   React.useEffect(() => {
     const amount = parseFloat(stake.amount);
-    const dailyRate = DAILY_REWARD_RATE; // 15% Daily Yield
+    const dailyRate = 0.15; // 15% Daily Base Yield
     
+    // Helper match the user's logic exactly
+    const getMultiplier = (lockDurationSeconds: number) => {
+      const days = lockDurationSeconds / 86400;
+      if (days <= 90) return 1.5;
+      if (days <= 180) return 1.9;
+      if (days <= 270) return 2.5;
+      return 3.5;
+    };
+
+    const multiplier = getMultiplier(stake.lockDuration);
+
     const ticker = setInterval(() => {
       const now = Date.now();
       const startTime = stake.startTime; // in ms
       const elapsedSeconds = (now - startTime) / 1000;
       
-      // Simple daily yield calculation: amount * 0.15 * (elapsed / 86400)
-      const earned = (amount * dailyRate * elapsedSeconds) / 86400;
+      // Calculate yield: 15% daily * multiplier
+      const earned = (amount * dailyRate * multiplier * elapsedSeconds) / 86400;
       
       setLiveRewards(Math.max(parseFloat(stake.accumulatedRewards), earned));
     }, 100);
 
     return () => clearInterval(ticker);
-  }, [stake.amount, stake.accumulatedRewards, stake.startTime]);
+  }, [stake.amount, stake.accumulatedRewards, stake.startTime, stake.lockDuration]);
 
   const now = Date.now();
   const endTime = stake.startTime + (stake.lockDuration * 1000);

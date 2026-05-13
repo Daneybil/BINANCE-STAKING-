@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { connectWallet } from '@/src/lib/web3';
 import { getStakes, Stake, checkIsActive, getLiveStatsFromContract } from '@/src/services/contractService';
+import { INITIAL_FAKE_STATS } from '@/src/lib/constants';
 
 import { Navbar } from './components/layout/Navbar';
 import { LandingPage } from './components/pages/LandingPage';
@@ -76,11 +77,12 @@ export default function App() {
     }
   };
   const [globalStats, setGlobalStats] = useState({
-    totalStaked: '0.00',
-    totalDeposits: '0.00',
-    totalRewardsClaimed: '0.00',
-    currentRewardPool: '0.00'
+    totalStaked: INITIAL_FAKE_STATS.tvl.toString(),
+    totalDeposits: INITIAL_FAKE_STATS.totalDeposits.toString(),
+    totalRewardsClaimed: INITIAL_FAKE_STATS.claimed.toString(),
+    currentRewardPool: INITIAL_FAKE_STATS.rewardPool.toString()
   });
+  const [dataRefreshing, setDataRefreshing] = useState(false);
 
   // Initial data fetch and polling
   useEffect(() => {
@@ -108,6 +110,7 @@ export default function App() {
 
   const refreshData = async () => {
     try {
+      setDataRefreshing(true);
       if (stakes.length === 0) setDataLoading(true);
       const [fetchedStakes, active] = await Promise.all([
         getStakes(walletAddress!, signer),
@@ -120,6 +123,7 @@ export default function App() {
       console.error("Data refresh failed", e);
     } finally {
       setDataLoading(false);
+      setDataRefreshing(false);
     }
   };
 
@@ -160,6 +164,7 @@ export default function App() {
             walletAddress={walletAddress} 
             stakes={stakes} 
             dataLoading={dataLoading}
+            isRefreshing={dataRefreshing}
             signer={signer} 
             isActive={contractActive} 
             onRefresh={refreshData}
