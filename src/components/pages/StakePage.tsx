@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ASSETS, REWARD_MULTIPLIERS } from '@/src/lib/constants';
 import { stakeAsset } from '@/src/services/contractService';
+import { saveManualStake } from '@/src/services/firebaseService';
 import { toast } from "sonner";
 
 interface StakePageProps {
@@ -63,6 +64,24 @@ export const StakePage: React.FC<StakePageProps> = ({
       const tx = await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
       
       const promise = tx.wait().then(async (receipt: any) => {
+        // Persistent sync to Firestore immediately after confirmation
+        try {
+          if (walletAddress) {
+            await saveManualStake(walletAddress, {
+              amount: stakeAmount,
+              startTime: Date.now(),
+              lockDuration: lockDays * 86400,
+              accumulatedRewards: "0",
+              claimed: false,
+              token: ASSETS.find(a => a.id === selectedAsset)?.address || "0x0000000000000000000000000000000000000000",
+              tokenSymbol: selectedAsset
+            });
+            console.log("Staking record persisted to Firestore");
+          }
+        } catch (syncError) {
+          console.error("Failed to persist staking record to Firestore", syncError);
+        }
+
         // Multi-stage refresh to handle blockchain indexing delays
         onRefresh();
         // Additional refreshes after 3s, 6s, and 12s to ensure UI eventually matches on-chain data

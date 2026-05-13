@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Information about a staking user",
+      "type": "object",
+      "properties": {
+        "walletAddress": { "type": "string" },
+        "lastSyncedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["walletAddress"]
+    },
+    "Stake": {
+      "title": "Stake",
+      "description": "Persistent record of a user stake for blockchain fallback",
+      "type": "object",
+      "properties": {
+        "walletAddress": { "type": "string" },
+        "amount": { "type": "string" },
+        "startTime": { "type": "number" },
+        "lockDuration": { "type": "number" },
+        "token": { "type": "string" },
+        "accumulatedRewards": { "type": "string" },
+        "stakeIndex": { "type": "number" },
+        "syncedAt": { "type": "number" }
+      },
+      "required": ["walletAddress", "amount", "startTime", "lockDuration"]
+    }
+  },
+  "firestore": {
+    "users/{walletAddress}": {
+      "schema": "User",
+      "description": "User profile and sync meta"
+    },
+    "users/{walletAddress}/stakes/{stakeId}": {
+      "schema": "Stake",
+      "description": "List of stakes for the user"
+    }
+  }
+}

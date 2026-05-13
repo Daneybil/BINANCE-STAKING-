@@ -1,5 +1,6 @@
 import { Contract, Signer, parseEther, formatEther, JsonRpcProvider } from 'ethers';
 import { BINANCE_STAKE_ADDRESS, BINANCE_STAKE_ABI, ASSETS, INITIAL_FAKE_STATS, GROWTH_RATES } from './../lib/constants';
+import { syncStakesToFirestore, getStakesFromFirestore } from './firebaseService';
 
 // Use public RPC for read-only stats before wallet connection
 const BSC_RPC = "https://bsc-dataseed.binance.org/";
@@ -88,11 +89,16 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
     // Ethers v6 can return a Proxy/Result object that looks like an array but might need conversion
     const stakesArray = Array.from(rawStakes);
     if (stakesArray.length === 0) {
-        console.log("User has 0 stakes on-chain.");
+        console.log("User has 0 stakes on-chain. Checking persistent storage...");
+        const persistentStakes = await getStakesFromFirestore(address);
+        if (persistentStakes.length > 0) {
+          console.log("Found persistent stakes in Firestore fallback:", persistentStakes.length);
+          return persistentStakes;
+        }
         return [];
     }
 
-    return stakesArray.map((s: any, index: number) => {
+    const fetchedStakes = stakesArray.map((s: any, index: number) => {
       // Handle both named and positional properties from the struct
       // Structural order in ABI: amount, startTime, lockDuration, accumulatedRewards, claimed, token
       const amount = s.amount !== undefined ? s.amount : (s[0] || 0);
@@ -115,8 +121,18 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
         tokenSymbol: tokenInfo.id
       };
     });
+
+    // Sync successfully fetched stakes to Firestore for future fallbacks
+    await syncStakesToFirestore(address, fetchedStakes);
+    
+    return fetchedStakes;
   } catch (e) {
-    console.error("Contract call getUserStakes failed:", e);
+    console.error("Contract call getUserStakes failed, checking persistent storage:", e);
+    const persistentStakes = await getStakesFromFirestore(address);
+    if (persistentStakes.length > 0) {
+      console.log("Found persistent stakes in Firestore fallback after error.");
+      return persistentStakes;
+    }
     return [];
   }
 };
