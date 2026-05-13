@@ -240,7 +240,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     onClick={onRefresh} 
                     className="binance-button h-12 px-10 rounded-xl text-[10px] font-black uppercase tracking-widest"
                   >
-                    Force Sync Ledger
+                    <History className="w-3 h-3 mr-2" /> Force Sync Ledger
                   </Button>
                 </div>
               </div>

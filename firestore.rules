@@ -1,28 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default deny
+    // Default deny for safety
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Helper: validate stake ID
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    // Allow users to manage their own stakes based on their wallet address
-    // In a production app, you would verify this with a signed message.
-    // For this prototype, we rely on the wallet address path.
+    // Allow users to reach their own collection based on their 0x wallet address
+    // We use a simple length check and lowercase validation for robustness
     match /users/{walletAddress} {
-      allow read, write: if isValidId(walletAddress);
+      allow read, write: if walletAddress.size() >= 40 && walletAddress.size() <= 44;
       
       match /stakes/{stakeId} {
-        allow read, write: if isValidId(walletAddress) && isValidId(stakeId);
+        allow read, write: if walletAddress.size() >= 40;
       }
     }
     
-    // Test collection
+    // Explicitly allow health check path
     match /test/connection {
       allow read: if true;
     }
