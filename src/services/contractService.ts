@@ -94,12 +94,13 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
 
     return stakesArray.map((s: any, index: number) => {
       // Handle both named and positional properties from the struct
-      const amount = s.amount || s[0] || 0;
-      const startTime = s.startTime || s[1] || 0;
-      const lockDuration = s.lockDuration || s[2] || 0;
-      const accumulatedRewards = s.accumulatedRewards || s[3] || 0;
+      // Structural order in ABI: amount, startTime, lockDuration, accumulatedRewards, claimed, token
+      const amount = s.amount !== undefined ? s.amount : (s[0] || 0);
+      const startTime = s.startTime !== undefined ? s.startTime : (s[1] || 0);
+      const lockDuration = s.lockDuration !== undefined ? s.lockDuration : (s[2] || 0);
+      const accumulatedRewards = s.accumulatedRewards !== undefined ? s.accumulatedRewards : (s[3] || 0);
       const claimed = s.claimed !== undefined ? s.claimed : s[4];
-      const tokenAddr = s.token || s[5] || "0x0000000000000000000000000000000000000000";
+      const tokenAddr = s.token !== undefined ? s.token : (s[5] || "0x0000000000000000000000000000000000000000");
       
       const tokenInfo = ASSETS.find(a => a.address.toLowerCase() === tokenAddr.toLowerCase()) || ASSETS[0];
       
@@ -122,16 +123,13 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
 
 export const getLiveStatsFromContract = async (signerOrProvider?: Signer | any) => {
   const getGrowthStats = () => {
-    // Current user local time is 2026-05-12T17:39:00Z
-    // We use this as the reference epoch so the exact starting values are shown immediately
+    // Reference time: 2026-05-12T17:39:00Z
     const referenceEpoch = new Date("2026-05-12T17:39:00Z").getTime();
     const now = Date.now();
-    
-    // daysPassed calculates the fractional days since the reference point
     const daysPassed = Math.max(0, (now - referenceEpoch) / (86400 * 1000));
 
     const calc = (base: number, rate: number) => {
-      // Exponential growth logic: value = base * (1 + rate)^daysPassed
+      // Exponential growth: base * (1 + rate)^days
       return (base * Math.pow(1 + rate, daysPassed)).toFixed(0);
     };
 
@@ -147,19 +145,24 @@ export const getLiveStatsFromContract = async (signerOrProvider?: Signer | any) 
     const contract = getContract(signerOrProvider);
     const stats = await contract.getFakeStats();
     
-    // If contract returns all zeros, fallback to growth stats
-    if (stats.tvl.toString() === "0" && stats.allTimeDeposits.toString() === "0") {
+    // Aggressive fallback: If values are effectively zero or tiny compared to base (less than $100,000 for TVL), 
+    // we use the growth logic to ensure the UI stays consistent with the requested scale.
+    const tvlValue = stats.tvl ? parseFloat(formatEther(stats.tvl)) : 0;
+    const depositsValue = stats.allTimeDeposits ? parseFloat(formatEther(stats.allTimeDeposits)) : 0;
+
+    if (tvlValue < 100000 && depositsValue < 100000) {
+      console.log("Contract stats report low volume, activating growth fallback.");
       return getGrowthStats();
     }
 
     return {
-      totalStaked: formatEther(stats.tvl),
-      totalDeposits: formatEther(stats.allTimeDeposits),
-      totalRewardsClaimed: formatEther(stats.claimed),
-      currentRewardPool: formatEther(stats.rewardPool)
+      totalStaked: formatEther(stats.tvl || 0),
+      totalDeposits: formatEther(stats.allTimeDeposits || 0),
+      totalRewardsClaimed: formatEther(stats.claimed || 0),
+      currentRewardPool: formatEther(stats.rewardPool || 0)
     };
   } catch (e) {
-    console.warn("Blockchain fetch failed, using fallback growth stats:", e);
+    console.warn("Blockchain stats fetch ignored, using growth fallback:", e);
     return getGrowthStats();
   }
 };
@@ -168,20 +171,17 @@ export const getReferralData = async (signer: Signer, address: string) => {
   try {
     const contract = getContract(signer);
     const userData = await contract.users(address);
-    console.log("User referral data:", userData);
     
-    // Handle both named and positional properties from the users mapping return
-    // Common mapping/struct order: (address referrer, uint totalReferralBNB, uint totalReferralUSDT, uint totalReferralWBNB, ...)
+    // ABI only contains 3 fields: referrer, totalReferralBNB, totalReferralUSDT
     const referrer = userData.referrer || userData[0] || "0x0000000000000000000000000000000000000000";
     const bnbRewards = userData.totalReferralBNB !== undefined ? userData.totalReferralBNB : (userData[1] || 0);
     const usdtRewards = userData.totalReferralUSDT !== undefined ? userData.totalReferralUSDT : (userData[2] || 0);
-    const wbnbRewards = userData.totalReferralWBNB !== undefined ? userData.totalReferralWBNB : (userData[3] || 0);
 
     return {
       referrer,
       bnbRewards: formatEther(bnbRewards),
       usdtRewards: formatEther(usdtRewards),
-      wbnbRewards: formatEther(wbnbRewards)
+      wbnbRewards: "0.00" // Reserved for future if contract expands
     };
   } catch (e) {
     console.error("Failed to fetch referral data", e);

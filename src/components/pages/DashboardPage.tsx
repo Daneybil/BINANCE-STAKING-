@@ -3,13 +3,14 @@ import { Wallet, History, Coins, BarChart3, TrendingUp, Inbox, Share2, ArrowUpRi
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Stake, withdrawReferral, getReferralData } from '@/src/services/contractService';
-import { ASSETS } from '@/src/lib/constants';
+import { ASSETS, DAILY_REWARD_RATE } from '@/src/lib/constants';
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
 interface DashboardPageProps {
   walletAddress: string | null;
   stakes: Stake[];
+  dataLoading: boolean;
   signer: any;
   isActive: boolean;
   onRefresh: () => void;
@@ -19,6 +20,7 @@ interface DashboardPageProps {
 export const DashboardPage: React.FC<DashboardPageProps> = ({ 
   walletAddress, 
   stakes, 
+  dataLoading,
   signer, 
   isActive, 
   onRefresh,
@@ -30,16 +32,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const totalStakedValue = stakes.reduce((acc, s) => acc + parseFloat(s.amount), 0);
 
-  const fetchReferral = async () => {
+  const fetchReferral = React.useCallback(async () => {
     if (signer && walletAddress) {
       const data = await getReferralData(signer, walletAddress);
       setReferralData(data as any);
     }
-  };
+  }, [signer, walletAddress]);
 
   React.useEffect(() => {
     fetchReferral();
-  }, [signer, walletAddress]);
+  }, [fetchReferral]);
+
+  // Expose fetchReferral or trigger it when onRefresh is called
+  React.useEffect(() => {
+    // When stakes OR isActive changes externally (via onRefresh/App.tsx polling), refresh referral too
+    fetchReferral();
+  }, [stakes, isActive, fetchReferral]);
 
   const handleWithdrawReferral = async (assetId: string) => {
     if (!signer || loading) return;
@@ -72,7 +80,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
     const calculateTotal = () => {
       const now = Date.now();
-      const dailyRate = 0.15; // 15% Daily Yield
+      const dailyRate = DAILY_REWARD_RATE; // 15% Daily Yield
       
       const total = stakes.reduce((acc, stake) => {
         const amount = parseFloat(stake.amount);
@@ -188,7 +196,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <Inbox className="w-5 h-5 text-primary" /> Active Binance Vault Positions
             </h3>
             
-            {stakes.length === 0 ? (
+            {dataLoading ? (
+              <div className="glass-panel border-white/5 rounded-[3rem] p-32 text-center space-y-8 relative overflow-hidden">
+                <div className="flex flex-col items-center space-y-6">
+                  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                  <p className="text-[10px] text-foreground/40 font-black uppercase tracking-[0.2em]">Synchronizing BSC Ledger Data...</p>
+                </div>
+              </div>
+            ) : stakes.length === 0 ? (
               <div className="glass-panel border-white/5 rounded-[3rem] p-32 text-center space-y-8 relative overflow-hidden">
                 <div className="absolute inset-0 bg-primary/2 rounded-full blur-[100px] -z-10" />
                 <div className="flex flex-col items-center space-y-6">
@@ -293,7 +308,7 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
   
   React.useEffect(() => {
     const amount = parseFloat(stake.amount);
-    const dailyRate = 0.15; // 15% Daily Yield
+    const dailyRate = DAILY_REWARD_RATE; // 15% Daily Yield
     
     const ticker = setInterval(() => {
       const now = Date.now();

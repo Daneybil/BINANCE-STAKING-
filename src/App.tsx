@@ -24,6 +24,7 @@ export default function App() {
   const [signer, setSigner] = useState<any>(null);
   const [chainId, setChainId] = useState<bigint | null>(null);
   const [stakes, setStakes] = useState<Stake[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
   const [contractActive, setContractActive] = useState(true);
 
   // Network Monitor
@@ -91,7 +92,7 @@ export default function App() {
   useEffect(() => {
     if (walletAddress && signer) {
       refreshData();
-      const interval = setInterval(refreshData, 30000); // UI poll every 30s
+      const interval = setInterval(refreshData, 10000); // UI poll every 10s for better responsiveness
       return () => clearInterval(interval);
     }
   }, [walletAddress, signer]);
@@ -107,6 +108,7 @@ export default function App() {
 
   const refreshData = async () => {
     try {
+      if (stakes.length === 0) setDataLoading(true);
       const [fetchedStakes, active] = await Promise.all([
         getStakes(walletAddress!, signer),
         checkIsActive(signer)
@@ -116,6 +118,8 @@ export default function App() {
       refreshGlobalStats(); // Also refresh global stats
     } catch (e) {
       console.error("Data refresh failed", e);
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -155,6 +159,7 @@ export default function App() {
           <DashboardPage 
             walletAddress={walletAddress} 
             stakes={stakes} 
+            dataLoading={dataLoading}
             signer={signer} 
             isActive={contractActive} 
             onRefresh={refreshData}

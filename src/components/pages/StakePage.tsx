@@ -62,8 +62,13 @@ export const StakePage: React.FC<StakePageProps> = ({
     try {
       const tx = await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
       
-      const promise = tx.wait().then((receipt: any) => {
+      const promise = tx.wait().then(async (receipt: any) => {
+        // Multi-stage refresh to handle blockchain indexing delays
         onRefresh();
+        // Additional refreshes after 3s, 6s, and 12s to ensure UI eventually matches on-chain data
+        setTimeout(onRefresh, 3000);
+        setTimeout(onRefresh, 6000);
+        setTimeout(onRefresh, 12000);
         return receipt;
       });
 
