@@ -7,7 +7,14 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
-export { signInAnonymously };
+export const signIn = async () => {
+  try {
+    return await signInAnonymously(auth);
+  } catch (error) {
+    console.error("Firebase Auth: Anonymous sign-in failed", error);
+    return null;
+  }
+};
 
 export enum OperationType {
   CREATE = 'create',

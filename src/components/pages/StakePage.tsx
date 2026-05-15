@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ASSETS, REWARD_MULTIPLIERS } from '@/src/lib/constants';
 import { stakeAsset } from '@/src/services/contractService';
 import { saveManualStake } from '@/src/services/firebaseService';
-import { auth, signInAnonymously } from '@/src/lib/firebase';
+import { auth, signIn } from '@/src/lib/firebase';
 import { toast } from "sonner";
 
 interface StakePageProps {
@@ -65,7 +65,7 @@ export const StakePage: React.FC<StakePageProps> = ({
       // 1. ENSURE FIREBASE AUTH IS READY
       if (!auth.currentUser) {
         console.log("STAKING: Firebase session missing, establishing...");
-        await signInAnonymously();
+        await signIn();
         // Give it a moment for the reactive SDK state to catch up
         await new Promise(r => setTimeout(r, 500));
       }

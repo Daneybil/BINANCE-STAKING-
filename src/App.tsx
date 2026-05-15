@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { connectWallet } from '@/src/lib/web3';
 import { getStakes, Stake, checkIsActive, getLiveStatsFromContract } from '@/src/services/contractService';
 import { INITIAL_FAKE_STATS } from '@/src/lib/constants';
-import { signInAnonymously } from '@/src/lib/firebase';
+import { signIn, auth } from '@/src/lib/firebase';
 
 import { Navbar } from './components/layout/Navbar';
 import { LandingPage } from './components/pages/LandingPage';
@@ -89,7 +89,7 @@ export default function App() {
     // 1. Establish Firebase Session for Firestore security
     const setupFirebase = async () => {
       try {
-        await signInAnonymously();
+        await signIn();
         console.log("Firebase Session: Active");
       } catch (e) {
         console.error("Firebase Session: Initialization failed", e);
@@ -176,43 +176,43 @@ export default function App() {
   const handleConnect = async () => {
     try {
       const connectedSigner = await connectWallet();
+      
       if (connectedSigner) {
         // 1. Firebase Session Establishment
         try {
-          await signInAnonymously();
+          await signIn();
           console.log("Firebase Identity Layer: Active");
         } catch (firebaseErr) {
           console.error("Firebase Identity Layer: Error", firebaseErr);
         }
 
-        // 2. Network verification
-        const network = await connectedSigner.provider.getNetwork();
-        if (network.chainId !== 56n) {
-          toast.loading("Switching to Binance Smart Chain...");
-          await switchNetwork();
-        }
-
         const address = await connectedSigner.getAddress();
         const lowerAddress = address.toLowerCase();
         
+        const network = await connectedSigner.provider.getNetwork();
+        setChainId(network.chainId);
         setSigner(connectedSigner);
         setWalletAddress(lowerAddress);
         
-        const updatedNetwork = await connectedSigner.provider.getNetwork();
-        setChainId(updatedNetwork.chainId);
-
         localStorage.setItem('walletAddress', lowerAddress);
 
         toast.success("Identity Verified", {
           description: `Connected to BNB Smart Chain`,
         });
+        
         if (currentPage === 'home') setCurrentPage('dashboard');
         
-        // Trigger immediate fetch with EXPLICIT address to avoid state race
+        // Trigger immediate fetch with EXPLICIT address
         refreshData(lowerAddress);
       }
     } catch (error: any) {
-      toast.error("Handshake Failed", { description: error.message });
+      // User rejected or switch failed
+      if (error.code === 4001) {
+        toast.error("Bridge Rejected", { description: "You must approve the connection to proceed." });
+      } else {
+        toast.error("Handshake Failed", { description: error.message || "Unknown error occurred" });
+      }
+      console.error("Connection flow error:", error);
     }
   };
 
