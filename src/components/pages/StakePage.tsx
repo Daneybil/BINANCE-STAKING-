@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ASSETS, REWARD_MULTIPLIERS } from '@/src/lib/constants';
 import { stakeAsset } from '@/src/services/contractService';
 import { saveManualStake } from '@/src/services/firebaseService';
+import { auth, signInAnonymously } from '@/src/lib/firebase';
 import { toast } from "sonner";
 
 interface StakePageProps {
@@ -61,8 +62,15 @@ export const StakePage: React.FC<StakePageProps> = ({
     setShowConfirm(false);
     setIsStaking(true);
     try {
-      // 1. PRE-RECORD to Firestore (Optimistic)
-      // This ensures that even if the RPC fails midway, we have a record of the transaction starting.
+      // 1. ENSURE FIREBASE AUTH IS READY
+      if (!auth.currentUser) {
+        console.log("STAKING: Firebase session missing, establishing...");
+        await signInAnonymously();
+        // Give it a moment for the reactive SDK state to catch up
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      // 2. PRE-RECORD to Firestore (Optimistic)
       if (walletAddress) {
         const addr = walletAddress.toLowerCase();
         console.log("CRITICAL PERSISTENCE: Pre-recording stake for:", addr);
@@ -77,7 +85,7 @@ export const StakePage: React.FC<StakePageProps> = ({
         });
       }
 
-      // 2. EXERT BLOCKCHAIN CALL
+      // 3. EXERT BLOCKCHAIN CALL
       const tx = await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
       
       const promise = tx.wait().then((receipt: any) => {

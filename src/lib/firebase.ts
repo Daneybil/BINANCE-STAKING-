@@ -32,8 +32,8 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: null, // We aren't using Firebase Auth yet, just wallet address
-      email: null,
+      userId: auth.currentUser?.uid || null,
+      email: auth.currentUser?.email || null,
     },
     operationType,
     path

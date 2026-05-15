@@ -84,11 +84,36 @@ export default function App() {
     currentRewardPool: INITIAL_FAKE_STATS.rewardPool.toString()
   });
 
-  // Startup Recovery
+  // Initial startup and Firebase session
   useEffect(() => {
+    // 1. Establish Firebase Session for Firestore security
+    const setupFirebase = async () => {
+      try {
+        await signInAnonymously();
+        console.log("Firebase Session: Active");
+      } catch (e) {
+        console.error("Firebase Session: Initialization failed", e);
+      }
+    };
+    setupFirebase();
+
+    // 2. Recovery logic
     const saved = localStorage.getItem('walletAddress');
     if (saved) {
-      setWalletAddress(saved.toLowerCase());
+      const lowerAddress = saved.toLowerCase();
+      setWalletAddress(lowerAddress);
+      
+      // If we have an address, we should try to reconnect internal signer 
+      // by triggering handleConnect without user interaction if possible
+      // or at least checking network if provider exists
+      const p = (window as any).ethereum;
+      if (p) {
+        p.request({ method: 'eth_accounts' }).then((accounts: string[]) => {
+          if (accounts.length > 0 && accounts[0].toLowerCase() === lowerAddress) {
+            handleConnect(); // Re-establish signer and enforce BSC
+          }
+        });
+      }
     }
   }, []);
 
