@@ -1,9 +1,13 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDocFromServer, collection, setDoc, getDocs, query, where } from 'firebase/firestore';
+import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const auth = getAuth(app);
+
+export { signInAnonymously };
 
 export enum OperationType {
   CREATE = 'create',

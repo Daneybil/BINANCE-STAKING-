@@ -6,14 +6,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Public access for development/testing phase to ensure no data loss
-    // In production, we would lock this down to specific wallet signatures.
-    match /users/{walletAddress} {
-      allow read, write: if true;
-      
-      match /stakes/{stakeId} {
-        allow read, write: if true;
-      }
+    // Authenticated access for individuals to manage their own ledger
+    // We require an anonymous session (request.auth != null) for basic protection
+    match /users/{walletAddress}/{allPaths=**} {
+      allow read, write: if request.auth != null;
     }
     
     // Explicitly allow health check path

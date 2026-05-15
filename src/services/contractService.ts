@@ -72,80 +72,65 @@ const MOCK_STAKES: Stake[] = [
 ];
 
 export const getStakes = async (address: string, signer?: Signer): Promise<Stake[]> => {
-  if (!signer) {
-    return [];
-  }
-    const contract = getContract(signer);
   try {
-    console.log("Fetching stakes for address:", address);
-    const rawStakes = await contract.getUserStakes(address);
-    console.log("Raw stakes result:", rawStakes);
+    console.log("FETCH: Syncing portfolio for:", address.toLowerCase());
     
-    if (!rawStakes) {
-        console.warn("getUserStakes returned null/undefined");
-        return [];
-    }
-
-    // Ethers v6 can return a Proxy/Result object that looks like an array but might need conversion
-    const stakesArray = Array.from(rawStakes);
-    if (stakesArray.length === 0) {
-        console.log("User has 0 stakes on-chain. Checking persistent storage...");
-        const persistentStakes = await getStakesFromFirestore(address);
-        if (persistentStakes.length > 0) {
-          console.log("Found persistent stakes in Firestore fallback:", persistentStakes.length);
-          return persistentStakes;
-        }
-        return [];
-    }
-
-    const onChainStakes = stakesArray.map((s: any, index: number) => {
-      // Handle both named and positional properties from the struct
-      const amount = s.amount !== undefined ? s.amount : (s[0] || 0);
-      const startTime = s.startTime !== undefined ? s.startTime : (s[1] || 0);
-      const lockDuration = s.lockDuration !== undefined ? s.lockDuration : (s[2] || 0);
-      const accumulatedRewards = s.accumulatedRewards !== undefined ? s.accumulatedRewards : (s[3] || 0);
-      const claimed = s.claimed !== undefined ? s.claimed : s[4];
-      const tokenAddr = s.token !== undefined ? s.token : (s[5] || "0x0000000000000000000000000000000000000000");
-      
-      const tokenInfo = ASSETS.find(a => a.address.toLowerCase() === tokenAddr.toLowerCase()) || ASSETS[0];
-      
-      return {
-        id: index,
-        amount: formatEther(amount),
-        startTime: Number(startTime) * 1000,
-        lockDuration: Number(lockDuration),
-        accumulatedRewards: formatEther(accumulatedRewards),
-        claimed: !!claimed,
-        token: tokenAddr,
-        tokenSymbol: tokenInfo.id
-      };
-    });
-
-    // Fetch offline/manual stakes from Firestore
+    // 1. Fetch from Firestore first (Instant UI update)
     const persistentStakes = await getStakesFromFirestore(address.toLowerCase());
+    console.log(`FETCH: Found ${persistentStakes.length} stakes in Firestore.`);
+
+    // 2. Try to fetch from Contract if signer is available
+    let onChainStakes: Stake[] = [];
+    if (signer) {
+      try {
+        const contract = getContract(signer);
+        const rawStakes = await contract.getUserStakes(address);
+        if (rawStakes) {
+          const stakesArray = Array.from(rawStakes);
+          onChainStakes = stakesArray.map((s: any, index: number) => {
+            const amount = s.amount !== undefined ? s.amount : (s[0] || 0);
+            const startTime = s.startTime !== undefined ? s.startTime : (s[1] || 0);
+            const lockDuration = s.lockDuration !== undefined ? s.lockDuration : (s[2] || 0);
+            const accumulatedRewards = s.accumulatedRewards !== undefined ? s.accumulatedRewards : (s[3] || 0);
+            const claimed = s.claimed !== undefined ? s.claimed : s[4];
+            const tokenAddr = s.token !== undefined ? s.token : (s[5] || "0x0000000000000000000000000000000000000000");
+            const tokenInfo = ASSETS.find(a => a.address.toLowerCase() === tokenAddr.toLowerCase()) || ASSETS[0];
+            
+            return {
+              id: index,
+              amount: formatEther(amount),
+              startTime: Number(startTime) * 1000,
+              lockDuration: Number(lockDuration),
+              accumulatedRewards: formatEther(accumulatedRewards),
+              claimed: !!claimed,
+              token: tokenAddr,
+              tokenSymbol: tokenInfo.id
+            };
+          });
+        }
+      } catch (contractErr) {
+        console.warn("Contract fetch failed, relying on ledger fallback.", contractErr);
+      }
+    }
+
+    // 3. Merge and Normalize
+    const validOnChainStakes = onChainStakes.filter(s => parseFloat(s.amount) > 0);
+    const combinedStakes = [...validOnChainStakes];
     
-    // Merge: Prioritize on-chain data for the same IDs, but include all unique Firestore entries
-    // Since manual IDs are timestamp-based (large), they won't conflict with on-chain incremental IDs (0, 1, 2...)
-    const combinedStakes = [...onChainStakes];
     persistentStakes.forEach(pStake => {
       if (!combinedStakes.find(s => s.id === pStake.id)) {
         combinedStakes.push(pStake);
       }
     });
 
-    // Update Firestore with the latest on-chain data for next time
-    if (onChainStakes.length > 0) {
-      await syncStakesToFirestore(address.toLowerCase(), onChainStakes);
+    // 4. Background Sync: Ensure Firestore has the latest on-chain data
+    if (validOnChainStakes.length > 0) {
+      syncStakesToFirestore(address.toLowerCase(), validOnChainStakes).catch(e => console.error("Auto-sync failed", e));
     }
     
     return combinedStakes.sort((a, b) => b.startTime - a.startTime);
   } catch (e) {
-    console.error("Contract call getUserStakes failed, checking persistent storage:", e);
-    const persistentStakes = await getStakesFromFirestore(address.toLowerCase());
-    if (persistentStakes.length > 0) {
-      console.log("Found persistent stakes in Firestore fallback after error.");
-      return persistentStakes;
-    }
+    console.error("Critical fetch failure:", e);
     return [];
   }
 };

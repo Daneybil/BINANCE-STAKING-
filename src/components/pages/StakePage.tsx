@@ -64,12 +64,12 @@ export const StakePage: React.FC<StakePageProps> = ({
       const tx = await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
       
       // PERSIST TO FIRESTORE IMMEDIATELY AS "PENDING"
-      // Using an IIFE to background the sync so it doesn't block UI toasts
-      (async () => {
+      // This ensures the transaction shows up on the dashboard even before blockchain confirmation
+      const recordToFirestore = async () => {
         try {
           if (walletAddress) {
             const addr = walletAddress.toLowerCase();
-            console.log("CRITICAL PERSISTENCE: Syncing pending stake for:", addr);
+            console.log("CRITICAL PERSISTENCE: Recording stake start for:", addr);
             await saveManualStake(addr, {
               amount: stakeAmount,
               startTime: Date.now(),
@@ -79,16 +79,21 @@ export const StakePage: React.FC<StakePageProps> = ({
               token: ASSETS.find(a => a.id === selectedAsset)?.address || "0x0000000000000000000000000000000000000000",
               tokenSymbol: selectedAsset
             });
-            console.log("CRITICAL PERSISTENCE: Partial Success (Pending)");
+            console.log("CRITICAL PERSISTENCE: Record saved to personal ledger.");
           }
         } catch (e) {
-          console.error("CRITICAL PERSISTENCE: Failed initial sync", e);
+          console.error("CRITICAL PERSISTENCE: Failed initial recording", e);
         }
-      })();
+      };
+      
+      // Execute recording in background
+      recordToFirestore();
 
       const promise = tx.wait().then((receipt: any) => {
         // Final refresh once on-chain
+        console.log("STAKING: Transaction confirmed on-chain.");
         onRefresh();
+        // Staggered refreshes to catch indexing delays
         setTimeout(onRefresh, 5000);
         setTimeout(onRefresh, 15000);
         return receipt;

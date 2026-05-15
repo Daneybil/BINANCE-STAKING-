@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { connectWallet } from '@/src/lib/web3';
 import { getStakes, Stake, checkIsActive, getLiveStatsFromContract } from '@/src/services/contractService';
 import { INITIAL_FAKE_STATS } from '@/src/lib/constants';
+import { signInAnonymously } from '@/src/lib/firebase';
 
 import { Navbar } from './components/layout/Navbar';
 import { LandingPage } from './components/pages/LandingPage';
@@ -82,6 +83,15 @@ export default function App() {
     totalRewardsClaimed: INITIAL_FAKE_STATS.claimed.toString(),
     currentRewardPool: INITIAL_FAKE_STATS.rewardPool.toString()
   });
+
+  // Startup Recovery
+  useEffect(() => {
+    const saved = localStorage.getItem('walletAddress');
+    if (saved) {
+      setWalletAddress(saved.toLowerCase());
+    }
+  }, []);
+
   const [dataRefreshing, setDataRefreshing] = useState(false);
 
   // Initial data fetch and polling
@@ -131,7 +141,15 @@ export default function App() {
     try {
       const connectedSigner = await connectWallet();
       if (connectedSigner) {
-        // Force BSC Check
+        // 1. Firebase Session Establishment
+        try {
+          await signInAnonymously();
+          console.log("Firebase Identity Layer: Active");
+        } catch (firebaseErr) {
+          console.error("Firebase Identity Layer: Error", firebaseErr);
+        }
+
+        // 2. Network verification
         const network = await connectedSigner.provider.getNetwork();
         if (network.chainId !== 56n) {
           toast.loading("Switching to Binance Smart Chain...");
@@ -139,16 +157,23 @@ export default function App() {
         }
 
         const address = await connectedSigner.getAddress();
+        const lowerAddress = address.toLowerCase();
+        
         setSigner(connectedSigner);
-        setWalletAddress(address);
+        setWalletAddress(lowerAddress);
         
         const updatedNetwork = await connectedSigner.provider.getNetwork();
         setChainId(updatedNetwork.chainId);
+
+        localStorage.setItem('walletAddress', lowerAddress);
 
         toast.success("Identity Verified", {
           description: `Connected to BNB Smart Chain`,
         });
         if (currentPage === 'home') setCurrentPage('dashboard');
+        
+        // Trigger immediate fetch
+        refreshData();
       }
     } catch (error: any) {
       toast.error("Handshake Failed", { description: error.message });
