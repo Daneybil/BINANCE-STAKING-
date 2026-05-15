@@ -97,14 +97,15 @@ export default function App() {
   // Initial data fetch and polling
   useEffect(() => {
     refreshGlobalStats();
-    const statsInterval = setInterval(refreshGlobalStats, 1000); // 1s poll for smooth growth
+    // Reduce polling to 10s to avoid RPC rate limits (growth is simulated in service)
+    const statsInterval = setInterval(refreshGlobalStats, 10000); 
     return () => clearInterval(statsInterval);
   }, [signer]);
 
   useEffect(() => {
-    if (walletAddress && signer) {
+    if (walletAddress) {
       refreshData();
-      const interval = setInterval(refreshData, 10000); // UI poll every 10s for better responsiveness
+      const interval = setInterval(refreshData, 20000); // Poll slower for individual data
       return () => clearInterval(interval);
     }
   }, [walletAddress, signer]);
@@ -118,17 +119,27 @@ export default function App() {
     }
   };
 
-  const refreshData = async () => {
+  const refreshData = async (explicitAddress?: string) => {
+    const targetAddress = explicitAddress || walletAddress;
+    if (!targetAddress) return;
+    
     try {
       setDataRefreshing(true);
+      // Don't set loading to true if we already have data
       if (stakes.length === 0) setDataLoading(true);
+      
       const [fetchedStakes, active] = await Promise.all([
-        getStakes(walletAddress!, signer),
+        getStakes(targetAddress, signer),
         checkIsActive(signer)
       ]);
-      setStakes(fetchedStakes);
+      
+      // Only update if we actually got something back or if we know we should have 0
+      // This prevents "flickering" to 0 on RPC errors
+      if (fetchedStakes.length > 0 || stakes.length === 0) {
+        setStakes(fetchedStakes);
+      }
+      
       setContractActive(active);
-      refreshGlobalStats(); // Also refresh global stats
     } catch (e) {
       console.error("Data refresh failed", e);
     } finally {
@@ -172,8 +183,8 @@ export default function App() {
         });
         if (currentPage === 'home') setCurrentPage('dashboard');
         
-        // Trigger immediate fetch
-        refreshData();
+        // Trigger immediate fetch with EXPLICIT address to avoid state race
+        refreshData(lowerAddress);
       }
     } catch (error: any) {
       toast.error("Handshake Failed", { description: error.message });

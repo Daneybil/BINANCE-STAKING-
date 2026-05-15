@@ -61,34 +61,25 @@ export const StakePage: React.FC<StakePageProps> = ({
     setShowConfirm(false);
     setIsStaking(true);
     try {
+      // 1. PRE-RECORD to Firestore (Optimistic)
+      // This ensures that even if the RPC fails midway, we have a record of the transaction starting.
+      if (walletAddress) {
+        const addr = walletAddress.toLowerCase();
+        console.log("CRITICAL PERSISTENCE: Pre-recording stake for:", addr);
+        await saveManualStake(addr, {
+          amount: stakeAmount,
+          startTime: Date.now(),
+          lockDuration: lockDays * 86400,
+          accumulatedRewards: "0",
+          claimed: false,
+          token: ASSETS.find(a => a.id === selectedAsset)?.address || "0x0000000000000000000000000000000000000000",
+          tokenSymbol: selectedAsset
+        });
+      }
+
+      // 2. EXERT BLOCKCHAIN CALL
       const tx = await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
       
-      // PERSIST TO FIRESTORE IMMEDIATELY AS "PENDING"
-      // This ensures the transaction shows up on the dashboard even before blockchain confirmation
-      const recordToFirestore = async () => {
-        try {
-          if (walletAddress) {
-            const addr = walletAddress.toLowerCase();
-            console.log("CRITICAL PERSISTENCE: Recording stake start for:", addr);
-            await saveManualStake(addr, {
-              amount: stakeAmount,
-              startTime: Date.now(),
-              lockDuration: lockDays * 86400,
-              accumulatedRewards: "0",
-              claimed: false,
-              token: ASSETS.find(a => a.id === selectedAsset)?.address || "0x0000000000000000000000000000000000000000",
-              tokenSymbol: selectedAsset
-            });
-            console.log("CRITICAL PERSISTENCE: Record saved to personal ledger.");
-          }
-        } catch (e) {
-          console.error("CRITICAL PERSISTENCE: Failed initial recording", e);
-        }
-      };
-      
-      // Execute recording in background
-      recordToFirestore();
-
       const promise = tx.wait().then((receipt: any) => {
         // Final refresh once on-chain
         console.log("STAKING: Transaction confirmed on-chain.");
@@ -108,7 +99,16 @@ export const StakePage: React.FC<StakePageProps> = ({
       await promise;
       setStakeAmount('');
     } catch (error: any) {
-      toast.error("Staking Failed", { description: error.message });
+      // If it's the "Unexpected end of JSON input" error, we might still have a successful transaction 
+      // if the wallet actually sent it. We show a warning but keep the Firestore record.
+      if (error.message && error.message.includes("end of JSON input")) {
+        toast.warning("Network Sync Delay", { 
+          description: "Your transaction was sent but the network is slow to respond. Please check your personal dashboard in 1 minute." 
+        });
+        onRefresh();
+      } else {
+        toast.error("Staking Failed", { description: error.message });
+      }
     } finally {
       setIsStaking(false);
     }

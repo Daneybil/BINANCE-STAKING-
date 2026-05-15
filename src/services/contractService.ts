@@ -2,9 +2,20 @@ import { Contract, Signer, parseEther, formatEther, JsonRpcProvider } from 'ethe
 import { BINANCE_STAKE_ADDRESS, BINANCE_STAKE_ABI, ASSETS, INITIAL_FAKE_STATS, GROWTH_RATES } from './../lib/constants';
 import { syncStakesToFirestore, getStakesFromFirestore } from './firebaseService';
 
-// Use public RPC for read-only stats before wallet connection
-const BSC_RPC = "https://bsc-dataseed.binance.org/";
-const defaultProvider = new JsonRpcProvider(BSC_RPC);
+// Use multiple public RPCs for read-only stats to increase reliability
+const BSC_RPCS = [
+  "https://bsc-dataseed.binance.org/",
+  "https://rpc.ankr.com/bsc",
+  "https://binance.llamarpc.com",
+  "https://bsc-dataseed1.defibit.io/"
+];
+
+const getFallbackProvider = () => {
+  // Use a simple rotation or just the first working one
+  return new JsonRpcProvider(BSC_RPCS[0]);
+};
+
+const defaultProvider = getFallbackProvider();
 
 export interface Stake {
   id: number;
@@ -155,30 +166,34 @@ export const getLiveStatsFromContract = async (signerOrProvider?: Signer | any) 
     };
   };
 
-  try {
-    const contract = getContract(signerOrProvider);
-    const stats = await contract.getFakeStats();
-    
-    // Aggressive fallback: If values are effectively zero or tiny compared to base (less than $100,000 for TVL), 
-    // we use the growth logic to ensure the UI stays consistent with the requested scale.
-    const tvlValue = stats.tvl ? parseFloat(formatEther(stats.tvl)) : 0;
-    const depositsValue = stats.allTimeDeposits ? parseFloat(formatEther(stats.allTimeDeposits)) : 0;
+  // If we have a signer, use its provider first. Otherwise rotate through public RPCs
+  const providersToTry = signerOrProvider ? [signerOrProvider] : BSC_RPCS.map(url => new JsonRpcProvider(url));
 
-    if (tvlValue < 100000 && depositsValue < 100000) {
-      console.log("Contract stats report low volume, activating growth fallback.");
-      return getGrowthStats();
+  for (const provider of providersToTry) {
+    try {
+      const contract = getContract(provider);
+      const stats = await contract.getFakeStats();
+      
+      const tvlValue = stats.tvl ? parseFloat(formatEther(stats.tvl)) : 0;
+      const depositsValue = stats.allTimeDeposits ? parseFloat(formatEther(stats.allTimeDeposits)) : 0;
+
+      if (tvlValue < 100000 && depositsValue < 100000) {
+        return getGrowthStats();
+      }
+
+      return {
+        totalStaked: formatEther(stats.tvl || 0),
+        totalDeposits: formatEther(stats.allTimeDeposits || 0),
+        totalRewardsClaimed: formatEther(stats.claimed || 0),
+        currentRewardPool: formatEther(stats.rewardPool || 0)
+      };
+    } catch (e) {
+      console.warn("Attempt with node failed, trying next or falling back:", e);
+      continue;
     }
-
-    return {
-      totalStaked: formatEther(stats.tvl || 0),
-      totalDeposits: formatEther(stats.allTimeDeposits || 0),
-      totalRewardsClaimed: formatEther(stats.claimed || 0),
-      currentRewardPool: formatEther(stats.rewardPool || 0)
-    };
-  } catch (e) {
-    console.warn("Blockchain stats fetch ignored, using growth fallback:", e);
-    return getGrowthStats();
   }
+
+  return getGrowthStats();
 };
 
 export const getReferralData = async (signer: Signer, address: string) => {
