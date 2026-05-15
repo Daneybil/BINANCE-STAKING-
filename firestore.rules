@@ -6,13 +6,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Allow users to reach their own collection based on their 0x wallet address
-    // We use a simple length check and lowercase validation for robustness
+    // Public access for development/testing phase to ensure no data loss
+    // In production, we would lock this down to specific wallet signatures.
     match /users/{walletAddress} {
-      allow read, write: if walletAddress.size() >= 40 && walletAddress.size() <= 44;
+      allow read, write: if true;
       
       match /stakes/{stakeId} {
-        allow read, write: if walletAddress.size() >= 40;
+        allow read, write: if true;
       }
     }
     

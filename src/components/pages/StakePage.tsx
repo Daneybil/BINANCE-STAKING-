@@ -67,6 +67,7 @@ export const StakePage: React.FC<StakePageProps> = ({
         // Persistent sync to Firestore immediately after confirmation
         try {
           if (walletAddress) {
+            console.log("Attempting to persist staking record to Firestore for:", walletAddress);
             await saveManualStake(walletAddress, {
               amount: stakeAmount,
               startTime: Date.now(),
@@ -76,10 +77,12 @@ export const StakePage: React.FC<StakePageProps> = ({
               token: ASSETS.find(a => a.id === selectedAsset)?.address || "0x0000000000000000000000000000000000000000",
               tokenSymbol: selectedAsset
             });
-            console.log("Staking record persisted to Firestore");
+            console.log("Staking record successfully persisted to Firestore");
+          } else {
+            console.warn("No wallet address found during post-transaction sync");
           }
         } catch (syncError) {
-          console.error("Failed to persist staking record to Firestore", syncError);
+          console.error("Critical: Failed to persist staking record to Firestore", syncError);
         }
 
         // Multi-stage refresh to handle blockchain indexing delays

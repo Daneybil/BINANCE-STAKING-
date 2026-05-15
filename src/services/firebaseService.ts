@@ -77,22 +77,30 @@ export const saveManualStake = async (walletAddress: string, stake: Omit<Stake, 
 
   try {
     const userRef = doc(db, 'users', walletAddress.toLowerCase());
+    // Ensure user document exists
+    await setDoc(userRef, { 
+      walletAddress: walletAddress.toLowerCase(),
+      lastModified: Date.now()
+    }, { merge: true });
+
     const stakesCollection = collection(userRef, 'stakes');
     
-    // Find the next ID by checking existing stakes count
-    const existingStakes = await getDocs(stakesCollection);
-    const newId = existingStakes.size;
-
-    const stakeRef = doc(stakesCollection, newId.toString());
-    await setDoc(stakeRef, {
-      ...stake,
-      id: newId,
-      walletAddress: walletAddress.toLowerCase(),
-      syncedAt: Date.now()
-    });
+    // We'll use a timestamp-based ID for manual stakes to avoid conflicts and unnecessary reads
+    const timestampId = Date.now().toString();
+    const stakeRef = doc(stakesCollection, timestampId);
     
-    console.log(`Saved manual stake ${newId} for ${walletAddress}`);
+    const stakeData = {
+      ...stake,
+      id: parseInt(timestampId.slice(-6)), // Use last 6 digits as a numeric ID for the UI
+      walletAddress: walletAddress.toLowerCase(),
+      syncedAt: Date.now(),
+      isManual: true
+    };
+
+    await setDoc(stakeRef, stakeData);
+    console.log(`Successfully saved manual stake ${timestampId} for ${walletAddress}`);
   } catch (error) {
+    console.error("Critical Firestore write failure:", error);
     handleFirestoreError(error, OperationType.WRITE, `users/${walletAddress}/stakes`);
   }
 };

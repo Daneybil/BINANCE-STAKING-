@@ -434,6 +434,11 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
           </div>
         </div>
 
+        <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest text-foreground/30 px-1">
+          <span>Staked: {new Date(stake.startTime).toLocaleDateString()}</span>
+          <span>Maturity: {new Date(stake.startTime + (stake.lockDuration * 1000)).toLocaleDateString()}</span>
+        </div>
+
         <div className="space-y-2">
           <div className="flex justify-between items-center text-[9px] font-black tracking-[0.2em] text-foreground/40 uppercase">
              {timeLeft === 0 ? (

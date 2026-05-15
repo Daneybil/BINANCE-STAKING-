@@ -98,9 +98,8 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
         return [];
     }
 
-    const fetchedStakes = stakesArray.map((s: any, index: number) => {
+    const onChainStakes = stakesArray.map((s: any, index: number) => {
       // Handle both named and positional properties from the struct
-      // Structural order in ABI: amount, startTime, lockDuration, accumulatedRewards, claimed, token
       const amount = s.amount !== undefined ? s.amount : (s[0] || 0);
       const startTime = s.startTime !== undefined ? s.startTime : (s[1] || 0);
       const lockDuration = s.lockDuration !== undefined ? s.lockDuration : (s[2] || 0);
@@ -122,10 +121,24 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
       };
     });
 
-    // Sync successfully fetched stakes to Firestore for future fallbacks
-    await syncStakesToFirestore(address, fetchedStakes);
+    // Fetch offline/manual stakes from Firestore
+    const persistentStakes = await getStakesFromFirestore(address);
     
-    return fetchedStakes;
+    // Merge: Prioritize on-chain data for the same IDs, but include all unique Firestore entries
+    // Since manual IDs are timestamp-based (large), they won't conflict with on-chain incremental IDs (0, 1, 2...)
+    const combinedStakes = [...onChainStakes];
+    persistentStakes.forEach(pStake => {
+      if (!combinedStakes.find(s => s.id === pStake.id)) {
+        combinedStakes.push(pStake);
+      }
+    });
+
+    // Update Firestore with the latest on-chain data for next time
+    if (onChainStakes.length > 0) {
+      await syncStakesToFirestore(address, onChainStakes);
+    }
+    
+    return combinedStakes.sort((a, b) => b.startTime - a.startTime);
   } catch (e) {
     console.error("Contract call getUserStakes failed, checking persistent storage:", e);
     const persistentStakes = await getStakesFromFirestore(address);
