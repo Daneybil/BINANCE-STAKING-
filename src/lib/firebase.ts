@@ -9,10 +9,14 @@ export const auth = getAuth(app);
 
 export const signIn = async () => {
   try {
-    return await signInAnonymously(auth);
+    const cred = await signInAnonymously(auth);
+    if (cred.user) {
+      console.log("Firebase Auth: Assigned Identity", cred.user.uid);
+    }
+    return cred;
   } catch (error) {
-    console.error("Firebase Auth: Anonymous sign-in failed", error);
-    return null;
+    console.error("Firebase Auth: Identity Assignment Error", error);
+    throw error;
   }
 };
 

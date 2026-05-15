@@ -29,24 +29,23 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(false);
   const [contractActive, setContractActive] = useState(true);
 
-  // Network Monitor
+  // Network Monitor - simplified
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).ethereum) {
       const handleChainChanged = (hexChainId: string) => {
-        setChainId(BigInt(hexChainId));
+        const newChainId = BigInt(hexChainId);
+        setChainId(newChainId);
+        // If we switch to Ethereum while connected, we should warn or try to switch back
+        if (walletAddress && newChainId !== 56n) {
+          toast.warning("Network Mismatch", { description: "Please ensure your wallet is set to Binance Smart Chain." });
+        }
       };
       (window as any).ethereum.on('chainChanged', handleChainChanged);
-      
-      // Auto-enforce BSC if already connected
-      if (walletAddress && chainId && chainId !== 56n) {
-        switchNetwork();
-      }
-
       return () => {
         (window as any).ethereum.removeListener('chainChanged', handleChainChanged);
       };
     }
-  }, [walletAddress, chainId]);
+  }, [walletAddress]);
 
   const switchNetwork = async () => {
     if (typeof window !== 'undefined' && (window as any).ethereum) {
@@ -175,17 +174,21 @@ export default function App() {
 
   const handleConnect = async () => {
     try {
+      // 1. Establish Identity Layer FIRST
+      toast.loading("Authenticating session...");
+      try {
+        await signIn();
+      } catch (authErr) {
+        console.error("Auth failed", authErr);
+        toast.error("Identity Error", { description: "Failed to establish a secure session with the database." });
+        return;
+      }
+      
+      // 2. Connect Wallet (includes automatic network switch)
+      toast.loading("Verifying network state...");
       const connectedSigner = await connectWallet();
       
       if (connectedSigner) {
-        // 1. Firebase Session Establishment
-        try {
-          await signIn();
-          console.log("Firebase Identity Layer: Active");
-        } catch (firebaseErr) {
-          console.error("Firebase Identity Layer: Error", firebaseErr);
-        }
-
         const address = await connectedSigner.getAddress();
         const lowerAddress = address.toLowerCase();
         
@@ -196,16 +199,18 @@ export default function App() {
         
         localStorage.setItem('walletAddress', lowerAddress);
 
+        toast.dismiss();
         toast.success("Identity Verified", {
           description: `Connected to BNB Smart Chain`,
         });
         
         if (currentPage === 'home') setCurrentPage('dashboard');
         
-        // Trigger immediate fetch with EXPLICIT address
+        // Trigger immediate fetch
         refreshData(lowerAddress);
       }
     } catch (error: any) {
+      toast.dismiss();
       // User rejected or switch failed
       if (error.code === 4001) {
         toast.error("Bridge Rejected", { description: "You must approve the connection to proceed." });

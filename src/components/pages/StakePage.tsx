@@ -64,16 +64,31 @@ export const StakePage: React.FC<StakePageProps> = ({
     try {
       // 1. ENSURE FIREBASE AUTH IS READY
       if (!auth.currentUser) {
-        console.log("STAKING: Firebase session missing, establishing...");
-        await signIn();
-        // Give it a moment for the reactive SDK state to catch up
-        await new Promise(r => setTimeout(r, 500));
+        console.log("STAKING: Identity layer inactive, initializing...");
+        try {
+          await signIn();
+          // Wait for state propagation
+          let attempts = 0;
+          while (!auth.currentUser && attempts < 10) {
+            await new Promise(r => setTimeout(r, 100));
+            attempts++;
+          }
+          if (!auth.currentUser) throw new Error("Identity verification failed. Please try again.");
+        } catch (authErr) {
+          throw new Error("Could not verify identity. Please ensure you have a stable internet connection.");
+        }
       }
 
       // 2. PRE-RECORD to Firestore (Optimistic)
       if (walletAddress) {
         const addr = walletAddress.toLowerCase();
         console.log("CRITICAL PERSISTENCE: Pre-recording stake for:", addr);
+        console.log("CRITICAL PERSISTENCE: Auth User ID:", auth.currentUser?.uid);
+        
+        if (!auth.currentUser) {
+           console.warn("STAKING: Proceeding with NULL auth user. This WILL fail.");
+        }
+
         await saveManualStake(addr, {
           amount: stakeAmount,
           startTime: Date.now(),
