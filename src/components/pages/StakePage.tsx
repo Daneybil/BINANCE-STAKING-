@@ -67,8 +67,8 @@ export const StakePage: React.FC<StakePageProps> = ({
         // Persistent sync to Firestore immediately after confirmation
         try {
           if (walletAddress) {
-            console.log("Attempting to persist staking record to Firestore for:", walletAddress);
-            await saveManualStake(walletAddress, {
+            console.log("CRITICAL PERSISTENCE: Recording stake for:", walletAddress.toLowerCase());
+            await saveManualStake(walletAddress.toLowerCase(), {
               amount: stakeAmount,
               startTime: Date.now(),
               lockDuration: lockDays * 86400,
@@ -77,20 +77,18 @@ export const StakePage: React.FC<StakePageProps> = ({
               token: ASSETS.find(a => a.id === selectedAsset)?.address || "0x0000000000000000000000000000000000000000",
               tokenSymbol: selectedAsset
             });
-            console.log("Staking record successfully persisted to Firestore");
-          } else {
-            console.warn("No wallet address found during post-transaction sync");
+            console.log("CRITICAL PERSISTENCE: Success");
           }
         } catch (syncError) {
-          console.error("Critical: Failed to persist staking record to Firestore", syncError);
+          console.error("CRITICAL PERSISTENCE: Failed", syncError);
         }
 
         // Multi-stage refresh to handle blockchain indexing delays
         onRefresh();
-        // Additional refreshes after 3s, 6s, and 12s to ensure UI eventually matches on-chain data
+        // Additional refreshes to ensure UI matches state
         setTimeout(onRefresh, 3000);
-        setTimeout(onRefresh, 6000);
-        setTimeout(onRefresh, 12000);
+        setTimeout(onRefresh, 8000);
+        setTimeout(onRefresh, 20000);
         return receipt;
       });
 

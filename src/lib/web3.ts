@@ -27,20 +27,26 @@ export const connectWallet = async (): Promise<JsonRpcSigner | null> => {
         await provider.send('wallet_switchEthereumChain', [{ chainId: BSC_CHAIN_ID }]);
       } catch (switchError: any) {
         if (switchError.code === 4902) {
-          await provider.send('wallet_addEthereumChain', [{
-            chainId: BSC_CHAIN_ID,
-            chainName: 'Binance Smart Chain',
-            nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
-            rpcUrls: [BSC_RPC_URL],
-            blockExplorerUrls: ['https://bscscan.com/'],
-          }]);
+          try {
+            await provider.send('wallet_addEthereumChain', [{
+              chainId: BSC_CHAIN_ID,
+              chainName: 'Binance Smart Chain',
+              nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+              rpcUrls: [BSC_RPC_URL],
+              blockExplorerUrls: ['https://bscscan.com/'],
+            }]);
+          } catch (addError) {
+            console.error('Failed to add BSC chain:', addError);
+            throw new Error('Please manually add Binance Smart Chain to your wallet settings.');
+          }
         } else {
           throw switchError;
         }
       }
     }
     
-    return signer;
+    // Get fresh signer after possible network switch
+    return await provider.getSigner();
   } catch (error) {
     console.error('Connection error:', error);
     return null;

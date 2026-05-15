@@ -131,14 +131,15 @@ export default function App() {
     try {
       const connectedSigner = await connectWallet();
       if (connectedSigner) {
+        // Force BSC Check
         const network = await connectedSigner.provider.getNetwork();
-        
         if (network.chainId !== 56n) {
+          toast.loading("Switching to Binance Smart Chain...");
           await switchNetwork();
         }
 
-        setSigner(connectedSigner);
         const address = await connectedSigner.getAddress();
+        setSigner(connectedSigner);
         setWalletAddress(address);
         
         const updatedNetwork = await connectedSigner.provider.getNetwork();

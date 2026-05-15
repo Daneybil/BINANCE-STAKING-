@@ -31,6 +31,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [liveTotalRewards, setLiveTotalRewards] = React.useState(0);
   const [referralData, setReferralData] = React.useState({ bnbRewards: "0", usdtRewards: "0", wbnbRewards: "0", referrer: "" });
   const [loading, setLoading] = React.useState(false);
+  const [firestoreStatus, setFirestoreStatus] = React.useState<'checking' | 'connected' | 'error'>('checking');
+
+  React.useEffect(() => {
+    const checkFirestore = async () => {
+      try {
+        const { testFirestoreConnection } = await import('@/src/lib/firebase');
+        await testFirestoreConnection();
+        setFirestoreStatus('connected');
+      } catch (e) {
+        setFirestoreStatus('error');
+      }
+    };
+    checkFirestore();
+  }, []);
 
   const totalStakedValue = stakes.reduce((acc, s) => acc + parseFloat(s.amount), 0);
 
@@ -95,14 +109,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       const total = stakes.reduce((acc, stake) => {
         const amount = parseFloat(stake.amount);
         const startTime = stake.startTime; // in ms
-        const elapsedSeconds = (now - startTime) / 1000;
+        const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
         
         const multiplier = getMultiplier(stake.lockDuration);
         
-        // Comprehensive daily yield calculation: amount * 15% * multiplier * (elapsed / 86400)
+        // Exact 15% daily yield * multiplier
+        // Formula: Amount * Rate * (Elapsed/86400) * Multiplier
         const earned = (amount * dailyRate * multiplier * elapsedSeconds) / 86400;
         
-        return acc + Math.max(parseFloat(stake.accumulatedRewards), earned);
+        return acc + earned;
       }, 0);
       
       setLiveTotalRewards(total);
@@ -123,18 +138,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
         
         {walletAddress && (
-          <Button variant="outline" size="sm" onClick={onRefresh} className="border-white/10 bg-secondary/30 rounded-xl h-12 px-6 text-[10px] font-bold tracking-widest hover:bg-secondary">
-             {isRefreshing ? (
-               <div className="flex items-center">
-                 <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
-                 SYNCING...
-               </div>
-             ) : (
-               <>
-                 <History className="w-4 h-4 mr-2" /> REFRESH PORTFOLIO
-               </>
-             )}
-          </Button>
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="flex items-center gap-2 px-4 h-12 bg-secondary/20 rounded-xl border border-white/5">
+              <div className={`w-2 h-2 rounded-full ${firestoreStatus === 'connected' ? 'bg-green-500 animate-pulse' : firestoreStatus === 'checking' ? 'bg-yellow-500' : 'bg-red-500'}`} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-foreground/40">
+                {firestoreStatus === 'connected' ? 'Sync Active' : firestoreStatus === 'checking' ? 'Connecting...' : 'Sync Offline'}
+              </span>
+            </div>
+            <Button variant="outline" size="sm" onClick={onRefresh} className="border-white/10 bg-secondary/30 rounded-xl h-12 px-6 text-[10px] font-bold tracking-widest hover:bg-secondary">
+               {isRefreshing ? (
+                 <div className="flex items-center">
+                   <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+                   INDEXING...
+                 </div>
+               ) : (
+                 <>
+                   <History className="w-4 h-4 mr-2" /> REFRESH PORTFOLIO
+                 </>
+               )}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -344,16 +367,16 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
     const ticker = setInterval(() => {
       const now = Date.now();
       const startTime = stake.startTime; // in ms
-      const elapsedSeconds = (now - startTime) / 1000;
+      const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
       
       // Calculate yield: 15% daily * multiplier
       const earned = (amount * dailyRate * multiplier * elapsedSeconds) / 86400;
       
-      setLiveRewards(Math.max(parseFloat(stake.accumulatedRewards), earned));
+      setLiveRewards(earned);
     }, 100);
 
     return () => clearInterval(ticker);
-  }, [stake.amount, stake.accumulatedRewards, stake.startTime, stake.lockDuration]);
+  }, [stake.amount, stake.startTime, stake.lockDuration]);
 
   const now = Date.now();
   const endTime = stake.startTime + (stake.lockDuration * 1000);
