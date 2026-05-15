@@ -122,7 +122,7 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
     });
 
     // Fetch offline/manual stakes from Firestore
-    const persistentStakes = await getStakesFromFirestore(address);
+    const persistentStakes = await getStakesFromFirestore(address.toLowerCase());
     
     // Merge: Prioritize on-chain data for the same IDs, but include all unique Firestore entries
     // Since manual IDs are timestamp-based (large), they won't conflict with on-chain incremental IDs (0, 1, 2...)
@@ -135,13 +135,13 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
 
     // Update Firestore with the latest on-chain data for next time
     if (onChainStakes.length > 0) {
-      await syncStakesToFirestore(address, onChainStakes);
+      await syncStakesToFirestore(address.toLowerCase(), onChainStakes);
     }
     
     return combinedStakes.sort((a, b) => b.startTime - a.startTime);
   } catch (e) {
     console.error("Contract call getUserStakes failed, checking persistent storage:", e);
-    const persistentStakes = await getStakesFromFirestore(address);
+    const persistentStakes = await getStakesFromFirestore(address.toLowerCase());
     if (persistentStakes.length > 0) {
       console.log("Found persistent stakes in Firestore fallback after error.");
       return persistentStakes;

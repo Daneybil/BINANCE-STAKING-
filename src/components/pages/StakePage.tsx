@@ -63,12 +63,14 @@ export const StakePage: React.FC<StakePageProps> = ({
     try {
       const tx = await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
       
-      const promise = tx.wait().then(async (receipt: any) => {
-        // Persistent sync to Firestore immediately after confirmation
+      // PERSIST TO FIRESTORE IMMEDIATELY AS "PENDING"
+      // Using an IIFE to background the sync so it doesn't block UI toasts
+      (async () => {
         try {
           if (walletAddress) {
-            console.log("CRITICAL PERSISTENCE: Recording stake for:", walletAddress.toLowerCase());
-            await saveManualStake(walletAddress.toLowerCase(), {
+            const addr = walletAddress.toLowerCase();
+            console.log("CRITICAL PERSISTENCE: Syncing pending stake for:", addr);
+            await saveManualStake(addr, {
               amount: stakeAmount,
               startTime: Date.now(),
               lockDuration: lockDays * 86400,
@@ -77,25 +79,25 @@ export const StakePage: React.FC<StakePageProps> = ({
               token: ASSETS.find(a => a.id === selectedAsset)?.address || "0x0000000000000000000000000000000000000000",
               tokenSymbol: selectedAsset
             });
-            console.log("CRITICAL PERSISTENCE: Success");
+            console.log("CRITICAL PERSISTENCE: Partial Success (Pending)");
           }
-        } catch (syncError) {
-          console.error("CRITICAL PERSISTENCE: Failed", syncError);
+        } catch (e) {
+          console.error("CRITICAL PERSISTENCE: Failed initial sync", e);
         }
+      })();
 
-        // Multi-stage refresh to handle blockchain indexing delays
+      const promise = tx.wait().then((receipt: any) => {
+        // Final refresh once on-chain
         onRefresh();
-        // Additional refreshes to ensure UI matches state
-        setTimeout(onRefresh, 3000);
-        setTimeout(onRefresh, 8000);
-        setTimeout(onRefresh, 20000);
+        setTimeout(onRefresh, 5000);
+        setTimeout(onRefresh, 15000);
         return receipt;
       });
 
       toast.promise(promise, {
-        loading: `Sending ${stakeAmount} ${selectedAsset} to Binance Vault...`,
-        success: 'Staking successful! Your portfolio is updating.',
-        error: 'Failed to confirm staking transaction.'
+        loading: `Broadcasting ${stakeAmount} ${selectedAsset} to Binance Smart Chain...`,
+        success: 'Transaction confirmed by network! Your dashboard will update shortly.',
+        error: 'Confirmation took too long. Please refresh the page manually.'
       });
 
       await promise;
