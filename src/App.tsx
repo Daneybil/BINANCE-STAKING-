@@ -174,17 +174,7 @@ export default function App() {
 
   const handleConnect = async () => {
     try {
-      // 1. Establish Identity Layer FIRST
-      toast.loading("Authenticating session...");
-      try {
-        await signIn();
-      } catch (authErr) {
-        console.error("Auth failed", authErr);
-        toast.error("Identity Error", { description: "Failed to establish a secure session with the database." });
-        return;
-      }
-      
-      // 2. Connect Wallet (includes automatic network switch)
+      // 1. Connect Wallet FIRST (Preserves "user gesture" for MetaMask popups)
       toast.loading("Verifying network state...");
       const connectedSigner = await connectWallet();
       
@@ -192,12 +182,27 @@ export default function App() {
         const address = await connectedSigner.getAddress();
         const lowerAddress = address.toLowerCase();
         
+        localStorage.setItem('walletAddress', lowerAddress);
+
+        // 2. Ensure Firebase/Identity is active
+        if (!auth.currentUser) {
+          try {
+            await signIn();
+          } catch (authErr: any) {
+            console.error("Identity session establishment paused", authErr);
+            if (authErr.code === 'auth/admin-restricted-operation') {
+              toast.error("Firebase Configuration Error", {
+                description: "Anonymous Auth is disabled. Please enable it in your Firebase Console (Authentication > Sign-in method).",
+                duration: 8000
+              });
+            }
+          }
+        }
+
         const network = await connectedSigner.provider.getNetwork();
         setChainId(network.chainId);
         setSigner(connectedSigner);
         setWalletAddress(lowerAddress);
-        
-        localStorage.setItem('walletAddress', lowerAddress);
 
         toast.dismiss();
         toast.success("Identity Verified", {
@@ -206,18 +211,17 @@ export default function App() {
         
         if (currentPage === 'home') setCurrentPage('dashboard');
         
-        // Trigger immediate fetch
         refreshData(lowerAddress);
       }
     } catch (error: any) {
       toast.dismiss();
-      // User rejected or switch failed
+      console.error("Connection flow error:", error);
+      
       if (error.code === 4001) {
         toast.error("Bridge Rejected", { description: "You must approve the connection to proceed." });
       } else {
         toast.error("Handshake Failed", { description: error.message || "Unknown error occurred" });
       }
-      console.error("Connection flow error:", error);
     }
   };
 

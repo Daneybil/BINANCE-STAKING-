@@ -12,10 +12,15 @@ export const signIn = async () => {
     const cred = await signInAnonymously(auth);
     if (cred.user) {
       console.log("Firebase Auth: Assigned Identity", cred.user.uid);
+      return cred.user;
     }
-    return cred;
-  } catch (error) {
-    console.error("Firebase Auth: Identity Assignment Error", error);
+    return null;
+  } catch (error: any) {
+    if (error.code === 'auth/admin-restricted-operation') {
+      console.error("Firebase Auth Error: Anonymous sign-in is disabled in your Firebase Console. Please enable it under Authentication > Sign-in method.");
+    } else {
+      console.error("Firebase Auth: Identity Assignment Error", error);
+    }
     throw error;
   }
 };

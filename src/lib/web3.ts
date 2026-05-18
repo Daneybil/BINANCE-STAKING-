@@ -30,20 +30,22 @@ export const connectWallet = async (): Promise<JsonRpcSigner | null> => {
       throw new Error("No accounts found. Please unlock your wallet.");
     }
     
-    // 2. Resolve Chain ID
-    let currentChainId = await ethereum.request({ method: 'eth_chainId' });
-    let isBSC = currentChainId && (currentChainId.toLowerCase() === BSC_CHAIN_ID || parseInt(currentChainId, 16) === 56);
+    // 2. Network Check & Auto-Switch
+    // Force a fresh chainId check from the provider
+    let chainIdHex = await ethereum.request({ method: 'eth_chainId' });
+    chainIdHex = chainIdHex ? chainIdHex.toLowerCase() : '';
     
-    if (!isBSC) {
-      console.log("Switching to Binance Smart Chain...");
+    if (chainIdHex !== BSC_CHAIN_ID.toLowerCase()) {
+      console.log("Network mismatch. Current:", chainIdHex, "Target:", BSC_CHAIN_ID);
       try {
         await ethereum.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: BSC_CHAIN_ID }],
         });
-        // Important: wait for the wallet to actually process the switch
+        // Important: wait for the wallet to actually process the switch before verifying
         await new Promise(r => setTimeout(r, 2000));
       } catch (switchError: any) {
+        // This error code indicates that the chain has not been added to MetaMask.
         if (switchError.code === 4902) {
           await ethereum.request({
             method: 'wallet_addEthereumChain',
@@ -61,23 +63,21 @@ export const connectWallet = async (): Promise<JsonRpcSigner | null> => {
         }
       }
       
-      // Re-verify after switch
-      currentChainId = await ethereum.request({ method: 'eth_chainId' });
-      isBSC = currentChainId && (currentChainId.toLowerCase() === BSC_CHAIN_ID || parseInt(currentChainId, 16) === 56);
-      if (!isBSC) {
-        throw new Error("Network switch rejected by user or wallet.");
+      // Re-verify after switch attempt
+      const verifiedChainId = await ethereum.request({ method: 'eth_chainId' });
+      if (!verifiedChainId || verifiedChainId.toLowerCase() !== BSC_CHAIN_ID.toLowerCase()) {
+        throw new Error("Automatic network switch failed. Please manually select Binance Smart Chain in your wallet.");
       }
     }
     
-    // 3. Create fresh provider and signer after possible network change
+    // 3. Final Signer Setup
     const provider = new BrowserProvider(ethereum, "any");
     const signer = await provider.getSigner();
     
-    // Double check network on the final signer's provider
+    // Ensure we are actually on 56 (BNB Smart Chain)
     const network = await provider.getNetwork();
     if (network.chainId !== 56n) {
-      console.warn("Final network check failed. Chain ID:", network.chainId);
-      // We still return it but the UI should handle the discrepancy if needed
+      throw new Error(`Critical Network Failure: Connected to Chain ID ${network.chainId} instead of BSC (56).`);
     }
     
     return signer;

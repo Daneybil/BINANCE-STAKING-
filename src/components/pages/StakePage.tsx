@@ -66,15 +66,13 @@ export const StakePage: React.FC<StakePageProps> = ({
       if (!auth.currentUser) {
         console.log("STAKING: Identity layer inactive, initializing...");
         try {
-          await signIn();
-          // Wait for state propagation
-          let attempts = 0;
-          while (!auth.currentUser && attempts < 10) {
-            await new Promise(r => setTimeout(r, 100));
-            attempts++;
+          const user = await signIn();
+          if (!user) throw new Error("Identity verification failed. Please try again.");
+          await new Promise(r => setTimeout(r, 1500));
+        } catch (authErr: any) {
+          if (authErr.code === 'auth/admin-restricted-operation') {
+            throw new Error("Action Restricted: Anonymous Auth is disabled in Firebase Console. Please enable it to allow staking records.");
           }
-          if (!auth.currentUser) throw new Error("Identity verification failed. Please try again.");
-        } catch (authErr) {
           throw new Error("Could not verify identity. Please ensure you have a stable internet connection.");
         }
       }
