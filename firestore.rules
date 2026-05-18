@@ -1,18 +1,46 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default deny for safety
+    // 1. Global Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function isAdmin() { return isSignedIn() && request.auth.uid == 'ADMIN_UID_HERE'; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // 2. Default deny for safety
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Authenticated access for individuals to manage their own ledger
-    // We require an anonymous session (request.auth != null) for basic protection
+    // 3. User Data Validation
+    function isValidUser(data) {
+      return data.keys().hasAll(['walletAddress']) &&
+             data.keys().size() <= 3 &&
+             data.walletAddress is string && data.walletAddress.size() <= 128;
+    }
+
     match /users/{walletAddress} {
-      allow read, write: if request.auth != null;
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && isValidUser(incoming());
+      allow update: if isSignedIn() && isValidUser(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['lastSyncedAt', 'walletAddress'])
+      );
       
-      match /{allPaths=**} {
-        allow read, write: if request.auth != null;
+      // 4. Staking Ledger
+      function isValidStake(data) {
+        return data.keys().hasAll(['walletAddress', 'amount', 'startTime', 'lockDuration']) &&
+               data.walletAddress is string && data.amount is string &&
+               data.startTime is number && data.lockDuration is number;
+      }
+
+      match /stakes/{stakeId} {
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn() && isValidStake(incoming());
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
       }
     }
     

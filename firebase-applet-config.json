@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0515643787",
-  "appId": "1:640103676868:web:e0948e08831f093c6cc291",
-  "apiKey": "AIzaSyBfuxirw7-GpmhYcLF4jJobCyh8bnVNcaE",
-  "authDomain": "gen-lang-client-0515643787.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-binancestaking-e960a7c1-8444-4a8a-b8ec-7bf0d973aeb6",
-  "storageBucket": "gen-lang-client-0515643787.firebasestorage.app",
-  "messagingSenderId": "640103676868",
-  "measurementId": ""
+  "projectId": "binance-staking-61a8f",
+  "appId": "1:589615237278:web:1018b51af7f6b129d2d38f",
+  "apiKey": "AIzaSyBYOmkuolpJ2BwiNNGDKlBQsTBcps1dxdE",
+  "authDomain": "binance-staking-61a8f.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "binance-staking-61a8f.firebasestorage.app",
+  "messagingSenderId": "589615237278",
+  "measurementId": "G-SW160Y8XN9"
 }

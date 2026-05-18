@@ -6,6 +6,7 @@ import { connectWallet } from '@/src/lib/web3';
 import { getStakes, Stake, checkIsActive, getLiveStatsFromContract } from '@/src/services/contractService';
 import { INITIAL_FAKE_STATS } from '@/src/lib/constants';
 import { signIn, auth } from '@/src/lib/firebase';
+import { initializeGuardian } from '@/src/lib/guardian';
 
 import { Navbar } from './components/layout/Navbar';
 import { LandingPage } from './components/pages/LandingPage';
@@ -85,7 +86,10 @@ export default function App() {
 
   // Initial startup and Firebase session
   useEffect(() => {
-    // 1. Establish Firebase Session for Firestore security
+    // 1. Initialize Guardian Security (Blocks Right-Click/F12)
+    initializeGuardian();
+
+    // 2. Establish Firebase Session for Firestore security
     const setupFirebase = async () => {
       try {
         await signIn();
