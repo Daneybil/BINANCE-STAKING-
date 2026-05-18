@@ -66,13 +66,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }, [stakes, isActive, fetchReferral]);
 
   const handleWithdrawReferral = async (assetId: string) => {
-    if (!signer || loading) return;
+    let activeSigner = signer;
+    if (!activeSigner) {
+      toast.loading("Session expired. reconnecting...");
+      try {
+        activeSigner = await (await import('@/src/lib/web3')).connectWallet();
+        onConnect();
+        toast.dismiss();
+      } catch (e: any) {
+        toast.error("Re-connection failed", { description: e.message });
+        return;
+      }
+    }
+    
+    if (loading) return;
     setLoading(true);
     try {
       const asset = ASSETS.find(a => a.id === assetId);
       if (!asset) return;
       
-      const tx = await withdrawReferral(signer, asset.address);
+      const tx = await withdrawReferral(activeSigner, asset.address);
       toast.promise(tx.wait(), {
         loading: `Withdrawal of ${assetId} referral rewards in progress...`,
         success: 'Referral rewards successfully claimed!',
@@ -388,10 +401,20 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
   const isWithdrawable = stake.claimed && isActive;
 
   const handleClaim = async () => {
-    if (!signer || loading) return;
+    let activeSigner = signer;
+    if (!activeSigner) {
+      try {
+        activeSigner = await (await import('@/src/lib/web3')).connectWallet();
+      } catch (e: any) {
+        toast.error("Re-connection failed", { description: e.message });
+        return;
+      }
+    }
+
+    if (loading) return;
     setLoading(true);
     try {
-      const tx = await import('@/src/services/contractService').then(m => m.claimStakeRewards(signer, stake.id));
+      const tx = await import('@/src/services/contractService').then(m => m.claimStakeRewards(activeSigner, stake.id));
       toast.promise(tx.wait(), {
         loading: 'Authorizing claim on blockchain...',
         success: 'Yield successfully distributed!',
@@ -407,10 +430,20 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
   };
 
   const handleWithdraw = async () => {
-    if (!signer || loading) return;
+    let activeSigner = signer;
+    if (!activeSigner) {
+      try {
+        activeSigner = await (await import('@/src/lib/web3')).connectWallet();
+      } catch (e: any) {
+        toast.error("Re-connection failed", { description: e.message });
+        return;
+      }
+    }
+
+    if (loading) return;
     setLoading(true);
     try {
-      const tx = await import('@/src/services/contractService').then(m => m.withdrawStakePrincipal(signer, stake.id));
+      const tx = await import('@/src/services/contractService').then(m => m.withdrawStakePrincipal(activeSigner, stake.id));
       toast.promise(tx.wait(), {
         loading: 'Processing principal withdrawal...',
         success: 'Capital successfully returned to wallet!',

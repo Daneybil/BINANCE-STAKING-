@@ -99,7 +99,27 @@ export const StakePage: React.FC<StakePageProps> = ({
       }
 
       // 3. EXERT BLOCKCHAIN CALL
-      const tx = await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
+      let activeSigner = signer;
+      if (!activeSigner) {
+        console.log("STAKING: Signer lost, re-establishing session...");
+        try {
+          const provider = (window as any).ethereum;
+          if (provider) {
+             const connectToast = toast.loading("Session expired. Re-verifying wallet...");
+             const freshSigner = await (await import('@/src/lib/web3')).connectWallet();
+             if (!freshSigner) throw new Error("Could not re-connect wallet.");
+             activeSigner = freshSigner;
+             onConnect(); // Update the app-level signer state
+             toast.dismiss(connectToast);
+          } else {
+             throw new Error("No wallet detected. Please connect your wallet first.");
+          }
+        } catch (connErr: any) {
+           throw new Error("Session re-establishment failed: " + connErr.message);
+        }
+      }
+
+      const tx = await stakeAsset(activeSigner, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
       
       const promise = tx.wait().then((receipt: any) => {
         // Final refresh once on-chain

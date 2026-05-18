@@ -31,11 +31,10 @@ export const connectWallet = async (): Promise<JsonRpcSigner | null> => {
     }
     
     // 2. Network Check & Auto-Switch
-    // Force a fresh chainId check from the provider
     let chainIdHex = await ethereum.request({ method: 'eth_chainId' });
-    chainIdHex = chainIdHex ? chainIdHex.toLowerCase() : '';
     
-    if (chainIdHex !== BSC_CHAIN_ID.toLowerCase()) {
+    // Check if we need to switch (BNB Smart Chain is 0x38 or 56)
+    if (chainIdHex?.toLowerCase() !== BSC_CHAIN_ID.toLowerCase()) {
       console.log("Network mismatch. Current:", chainIdHex, "Target:", BSC_CHAIN_ID);
       try {
         await ethereum.request({
@@ -46,18 +45,22 @@ export const connectWallet = async (): Promise<JsonRpcSigner | null> => {
         await new Promise(r => setTimeout(r, 2000));
       } catch (switchError: any) {
         // This error code indicates that the chain has not been added to MetaMask.
-        if (switchError.code === 4902) {
-          await ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: BSC_CHAIN_ID,
-              chainName: 'Binance Smart Chain',
-              nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
-              rpcUrls: [BSC_RPC_URL],
-              blockExplorerUrls: ['https://bscscan.com/'],
-            }],
-          });
-          await new Promise(r => setTimeout(r, 2000));
+        if (switchError.code === 4902 || switchError.code === -32603) {
+          try {
+            await ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: BSC_CHAIN_ID,
+                chainName: 'Binance Smart Chain',
+                nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+                rpcUrls: [BSC_RPC_URL],
+                blockExplorerUrls: ['https://bscscan.com/'],
+              }],
+            });
+            await new Promise(r => setTimeout(r, 2000));
+          } catch (addError) {
+             console.error("Critical: Could not add BSC network.", addError);
+          }
         } else {
           throw switchError;
         }
@@ -70,8 +73,8 @@ export const connectWallet = async (): Promise<JsonRpcSigner | null> => {
       }
     }
     
-    // 3. Final Signer Setup
-    const provider = new BrowserProvider(ethereum, "any");
+    // 3. Final Signer Setup - Force fresh provider to avoid stale states
+    const provider = new BrowserProvider(ethereum, 56);
     const signer = await provider.getSigner();
     
     // Ensure we are actually on 56 (BNB Smart Chain)
