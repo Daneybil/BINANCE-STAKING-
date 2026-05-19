@@ -40,7 +40,7 @@ const BSC_MAINNET = {
 
 export async function switchToBSC() {
   if (typeof window === 'undefined' || !(window as any).ethereum) {
-    throw new Error("Wallet not detected");
+    return false;
   }
   const ethereum = (window as any).ethereum;
 
@@ -52,8 +52,9 @@ export async function switchToBSC() {
     });
     return true;
   } catch (switchError: any) {
-    // Chain not added
-    if (switchError.code === 4902 || switchError.code === -32603) {
+    // This error code (4902) indicates that the chain has not been added to MetaMask.
+    // Some wallets like Trust Wallet use different codes (e.g. -32603)
+    if (switchError.code === 4902 || switchError.code === -32603 || switchError.message?.includes("Unrecognized chain ID")) {
       try {
         await ethereum.request({
           method: "wallet_addEthereumChain",

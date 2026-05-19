@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, ShieldCheck, Timer, BarChart3, Users, ChevronRight, Activity, Cpu, Globe2, Zap } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
 import { formatCurrency } from '@/src/services/statsService';
 import { Logo } from '@/src/components/ui/Logo';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';

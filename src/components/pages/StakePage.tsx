@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Coins, ChevronRight, Info, Users, BarChart3, AlertCircle, TrendingUp, Activity, ShieldCheck } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Badge } from "@/src/components/ui/badge";
+import { Card } from "@/src/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { ASSETS, REWARD_MULTIPLIERS } from '@/src/lib/constants';
 import { stakeAsset } from '@/src/services/contractService';
 import { saveManualStake } from '@/src/services/firebaseService';
@@ -17,6 +17,29 @@ interface StakePageProps {
   signer: any;
   onRefresh: () => void;
   onConnect: () => void;
+}
+
+const LOCK_PERIOD_CONFIG = [60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360];
+
+function FAQCard({ question, answer }: { question: string, answer: string }) {
+  return (
+    <Card className="glass-panel p-8 rounded-3xl border-white/5 hover:border-primary/20 transition-all space-y-4">
+      <h4 className="text-lg font-black text-primary uppercase tracking-tighter italic">{question}</h4>
+      <p className="text-sm text-foreground/50 leading-relaxed font-bold tracking-normal">{answer}</p>
+    </Card>
+  );
+}
+
+function ParameterInfo({ title, value, description }: { title: string, value: string, description: string }) {
+  return (
+    <div className="glass-panel p-6 rounded-3xl space-y-3 border-white/5">
+      <div className="space-y-1">
+        <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{title}</p>
+        <p className="text-lg font-black">{value}</p>
+      </div>
+      <p className="text-[10px] text-foreground/40 font-medium leading-relaxed">{description}</p>
+    </div>
+  );
 }
 
 export const StakePage: React.FC<StakePageProps> = ({ 
@@ -411,26 +434,3 @@ export const StakePage: React.FC<StakePageProps> = ({
     </div>
   );
 };
-
-const LOCK_PERIOD_CONFIG = [60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360];
-
-function FAQCard({ question, answer }: { question: string, answer: string }) {
-  return (
-    <Card className="glass-panel p-8 rounded-3xl border-white/5 hover:border-primary/20 transition-all space-y-4">
-      <h4 className="text-lg font-black text-primary uppercase tracking-tighter italic">{question}</h4>
-      <p className="text-sm text-foreground/50 leading-relaxed font-bold tracking-normal">{answer}</p>
-    </Card>
-  );
-}
-
-function ParameterInfo({ title, value, description }: { title: string, value: string, description: string }) {
-  return (
-    <div className="glass-panel p-6 rounded-3xl space-y-3 border-white/5">
-      <div className="space-y-1">
-        <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{title}</p>
-        <p className="text-lg font-black">{value}</p>
-      </div>
-      <p className="text-[10px] text-foreground/40 font-medium leading-relaxed">{description}</p>
-    </div>
-  );
-}

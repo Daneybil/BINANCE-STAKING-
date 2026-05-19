@@ -1,6 +1,6 @@
 import React from 'react';
 import { Wallet, Coins, Menu, X } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 
 import { Logo } from '@/src/components/ui/Logo';
 

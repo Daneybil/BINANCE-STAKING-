@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Users, History, Link as LinkIcon, Gift, TrendingUp, AlertCircle, Coins } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/src/components/ui/button";
+import { Card } from "@/src/components/ui/card";
+import { Badge } from "@/src/components/ui/badge";
+import { Input } from "@/src/components/ui/input";
 import { toast } from "sonner";
 import { getReferralData, withdrawReferral } from '@/src/services/contractService';
 import { USDT_ADDRESS } from '@/src/lib/constants';

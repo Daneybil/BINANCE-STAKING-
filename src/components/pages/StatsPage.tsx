@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, Globe, Coins, ShieldCheck, PieChart } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/src/components/ui/card";
+import { Badge } from "@/src/components/ui/badge";
 import { getLiveStatsFromContract } from '@/src/services/contractService';
 import { formatUSD } from '@/src/lib/utils';
 

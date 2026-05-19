@@ -1,10 +1,10 @@
 import React from 'react';
 import { Wallet, History, Coins, BarChart3, TrendingUp, Inbox, Share2, ArrowUpRight } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
 import { Stake, withdrawReferral, getReferralData } from '@/src/services/contractService';
 import { ASSETS, DAILY_REWARD_RATE } from '@/src/lib/constants';
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "@/src/components/ui/progress";
 import { toast } from "sonner";
 import { formatUSD, formatNumber, getYieldFontSize, cn } from '@/src/lib/utils';
 

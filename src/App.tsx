@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/src/components/ui/sonner";
 import { toast } from "sonner";
 
 import { connectWallet, disconnectWallet } from '@/src/lib/web3';
@@ -40,15 +40,18 @@ export default function App() {
           const newChainId = BigInt(idStr);
           setChainId(newChainId);
           
-          // AUTO SWITCH: If we are connected and switch away from BSC, try to switch him back immediately
-          if (walletAddress && newChainId !== 56n) {
-            toast.info("Network Shift Detected", { description: "Re-aligning with Binance Smart Chain..." });
-            const { switchToBSC } = await import('@/src/lib/web3');
-            const success = await switchToBSC();
-            if (!success) {
-              toast.error("Network Alignment Failed", { description: "Please manually select Binance Smart Chain in your wallet." });
+            // If we are connected and switch away from BSC, try to switch him back immediately
+            if (walletAddress && newChainId !== 56n) {
+              const { switchToBSC } = await import('@/src/lib/web3');
+              // Non-blocking auto switch
+              switchToBSC().then(success => {
+                if (success) {
+                  toast.success("Connection Restored", { description: "Back on Binance Smart Chain." });
+                } else {
+                  toast.error("Network Alignment Failed", { description: "Please manually select Binance Smart Chain in your wallet." });
+                }
+              });
             }
-          }
         } catch (e) {
           console.error("Chain monitor error:", e);
         }
