@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card } from "@/components/ui/card";
+import { Card } from "@/src/components/ui/card";
 import { Shield, Lock, Eye, FileText } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/src/components/ui/badge";
 
 export const PrivacyPage: React.FC = () => {
   return (

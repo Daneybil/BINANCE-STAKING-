@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card } from "@/components/ui/card";
+import { Card } from "@/src/components/ui/card";
 import { Gavel, AlertTriangle, Clock, Scale } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/src/components/ui/badge";
 
 export const TermsPage: React.FC = () => {
   return (

@@ -20,7 +20,7 @@ import { TermsPage } from './components/pages/TermsPage';
 import { RiskPage } from './components/pages/RiskPage';
 import { Logo } from '@/src/components/ui/Logo';
 import { Twitter, Instagram, Facebook, Globe, Activity } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');

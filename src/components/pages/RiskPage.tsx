@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card } from "@/components/ui/card";
+import { Card } from "@/src/components/ui/card";
 import { AlertCircle, TrendingDown, Zap, ShieldAlert } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/src/components/ui/badge";
 
 export const RiskPage: React.FC = () => {
   return (

@@ -10,7 +10,7 @@ import { stakeAsset } from '@/src/services/contractService';
 import { saveManualStake } from '@/src/services/firebaseService';
 import { auth, signIn } from '@/src/lib/firebase';
 import { toast } from "sonner";
-import { formatUSD, formatNumber, getYieldFontSize } from '@/src/lib/utils';
+import { formatUSD, formatNumber, getYieldFontSize, cn } from '@/src/lib/utils';
 
 interface StakePageProps {
   walletAddress: string | null;
