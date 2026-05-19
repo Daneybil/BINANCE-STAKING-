@@ -14,6 +14,7 @@ import { DashboardPage } from './components/pages/DashboardPage';
 import { StakePage } from './components/pages/StakePage';
 import { StatsPage } from './components/pages/StatsPage';
 import { ReferralPage } from './components/pages/ReferralPage';
+import { SupportPage } from './components/pages/SupportPage';
 import { PrivacyPage } from './components/pages/PrivacyPage';
 import { TermsPage } from './components/pages/TermsPage';
 import { RiskPage } from './components/pages/RiskPage';
@@ -30,15 +31,26 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(false);
   const [contractActive, setContractActive] = useState(true);
 
-  // Network Monitor - simplified
+  // Network Monitor - improved with active switching
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).ethereum) {
-      const handleChainChanged = (hexChainId: string) => {
-        const newChainId = BigInt(hexChainId);
-        setChainId(newChainId);
-        // If we switch to Ethereum while connected, we should warn or try to switch back
-        if (walletAddress && newChainId !== 56n) {
-          toast.warning("Network Mismatch", { description: "Please ensure your wallet is set to Binance Smart Chain." });
+      const handleChainChanged = async (hexChainId: any) => {
+        try {
+          const idStr = typeof hexChainId === 'string' ? hexChainId : hexChainId.toString();
+          const newChainId = BigInt(idStr);
+          setChainId(newChainId);
+          
+          // AUTO SWITCH: If we are connected and switch away from BSC, try to switch him back immediately
+          if (walletAddress && newChainId !== 56n) {
+            toast.info("Network Shift Detected", { description: "Re-aligning with Binance Smart Chain..." });
+            const { switchToBSC } = await import('@/src/lib/web3');
+            const success = await switchToBSC();
+            if (!success) {
+              toast.error("Network Alignment Failed", { description: "Please manually select Binance Smart Chain in your wallet." });
+            }
+          }
+        } catch (e) {
+          console.error("Chain monitor error:", e);
         }
       };
       (window as any).ethereum.on('chainChanged', handleChainChanged);
@@ -208,6 +220,7 @@ export default function App() {
           description: `Active on BNB Smart Chain`,
         });
         
+        // Ensure UI stays on current page if not Home
         if (currentPage === 'home') setCurrentPage('dashboard');
         
         refreshData(lowerAddress);
@@ -280,6 +293,8 @@ export default function App() {
             onConnect={handleConnect}
           />
         );
+      case 'support':
+        return <SupportPage />;
       default:
         return <LandingPage onStart={() => setCurrentPage('stake')} onViewStats={() => setCurrentPage('stats')} globalStats={globalStats} />;
     }

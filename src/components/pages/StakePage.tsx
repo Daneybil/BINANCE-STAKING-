@@ -52,7 +52,10 @@ export const StakePage: React.FC<StakePageProps> = ({
   }, [stakeAmount, lockDays]);
 
   const handleStakeClick = () => {
-    if (!walletAddress) return onConnect();
+    if (!walletAddress) {
+      toast.info("Connection Required", { description: "Establishing secure link to Binance Smart Chain..." });
+      return onConnect();
+    }
     if (!stakeAmount || parseFloat(stakeAmount) <= 0) {
       return toast.error("Invalid Amount", { description: "Please enter a valid amount to stake." });
     }
@@ -136,22 +139,8 @@ export const StakePage: React.FC<StakePageProps> = ({
     }
   };
 
-  if (!walletAddress) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 text-center space-y-6">
-        <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <Activity className="w-12 h-12 text-primary animate-pulse" />
-        </div>
-        <h2 className="text-4xl font-black font-heading uppercase italic tracking-tighter">Connection Required</h2>
-        <p className="text-foreground/40 max-w-md font-bold">Please link your Binance Smart Chain wallet to access real-time staking vaults.</p>
-        <Button onClick={onConnect} className="binance-button h-16 px-12 rounded-2xl text-lg font-black italic tracking-tighter">
-          SECURE CONNECTION
-        </Button>
-      </div>
-    );
-  }
-
-
+  // Removed restrictive early return to prevent "blank screen" reported by user
+  
   return (
     <div className="space-y-16 py-12">
       {/* Confirmation Modal */}

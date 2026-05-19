@@ -18,7 +18,8 @@ export const disconnectWallet = () => {
 export const getProvider = () => {
   if (typeof window !== 'undefined' && (window as any).ethereum) {
     if (!cachedProvider) {
-      cachedProvider = new BrowserProvider((window as any).ethereum, 56);
+      // Use "any" for network - Ethers 6 handles this and skips aggressive pre-validation
+      cachedProvider = new BrowserProvider((window as any).ethereum, "any");
     }
     return cachedProvider;
   }
@@ -89,8 +90,8 @@ export const connectWallet = async (): Promise<JsonRpcSigner | null> => {
       throw new Error("Action Denied: You must switch to Binance Smart Chain to use this platform.");
     }
     
-    // 3. Final Signer Setup - Force fresh provider for chain 56
-    const provider = new BrowserProvider(ethereum, 56);
+    // 3. Final Signer Setup - Force fresh provider with "any" to prevent sync hangs
+    const provider = new BrowserProvider(ethereum, "any");
     const signer = await provider.getSigner();
     
     // Final hard verification
