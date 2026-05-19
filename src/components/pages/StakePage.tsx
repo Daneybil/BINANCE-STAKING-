@@ -10,6 +10,7 @@ import { stakeAsset } from '@/src/services/contractService';
 import { saveManualStake } from '@/src/services/firebaseService';
 import { auth, signIn } from '@/src/lib/firebase';
 import { toast } from "sonner";
+import { formatUSD, formatNumber, getYieldFontSize } from '@/src/lib/utils';
 
 interface StakePageProps {
   walletAddress: string | null;
@@ -77,52 +78,30 @@ export const StakePage: React.FC<StakePageProps> = ({
         }
       }
 
-      // 2. PRE-RECORD to Firestore (Optimistic)
-      if (walletAddress) {
-        const addr = walletAddress.toLowerCase();
-        console.log("CRITICAL PERSISTENCE: Pre-recording stake for:", addr);
-        console.log("CRITICAL PERSISTENCE: Auth User ID:", auth.currentUser?.uid);
-        
-        if (!auth.currentUser) {
-           console.warn("STAKING: Proceeding with NULL auth user. This WILL fail.");
-        }
-
-        await saveManualStake(addr, {
-          amount: stakeAmount,
-          startTime: Date.now(),
-          lockDuration: lockDays * 86400,
-          accumulatedRewards: "0",
-          claimed: false,
-          token: ASSETS.find(a => a.id === selectedAsset)?.address || "0x0000000000000000000000000000000000000000",
-          tokenSymbol: selectedAsset
-        });
-      }
-
-      // 3. EXERT BLOCKCHAIN CALL
-      let activeSigner = signer;
-      if (!activeSigner) {
-        console.log("STAKING: Signer lost, re-establishing session...");
-        try {
-          const provider = (window as any).ethereum;
-          if (provider) {
-             const connectToast = toast.loading("Session expired. Re-verifying wallet...");
-             const freshSigner = await (await import('@/src/lib/web3')).connectWallet();
-             if (!freshSigner) throw new Error("Could not re-connect wallet.");
-             activeSigner = freshSigner;
-             onConnect(); // Update the app-level signer state
-             toast.dismiss(connectToast);
-          } else {
-             throw new Error("No wallet detected. Please connect your wallet first.");
-          }
-        } catch (connErr: any) {
-           throw new Error("Session re-establishment failed: " + connErr.message);
-        }
-      }
-
       const tx = await stakeAsset(activeSigner, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
       
-      const promise = tx.wait().then((receipt: any) => {
-        // Final refresh once on-chain
+      const promise = tx.wait().then(async (receipt: any) => {
+        // 4. CRITICAL: ONLY SAVE TO FIREBASE AFTER BLOCKCHAIN CONFIRMATION
+        if (walletAddress) {
+          try {
+            const addr = walletAddress.toLowerCase();
+            console.log("STAKING: Transaction validated. Securing record in Firestore...");
+            
+            await saveManualStake(addr, {
+              amount: stakeAmount,
+              startTime: Date.now(),
+              lockDuration: lockDays * 86400,
+              accumulatedRewards: "0",
+              claimed: false,
+              token: ASSETS.find(a => a.id === selectedAsset)?.address || "0x0000000000000000000000000000000000000000",
+              tokenSymbol: selectedAsset,
+              txHash: receipt.hash
+            });
+          } catch (dbErr) {
+            console.error("STAKING: On-chain success, but fallback storage failed.", dbErr);
+          }
+        }
+
         console.log("STAKING: Transaction confirmed on-chain.");
         onRefresh();
         // Staggered refreshes to catch indexing delays
@@ -133,8 +112,8 @@ export const StakePage: React.FC<StakePageProps> = ({
 
       toast.promise(promise, {
         loading: `Broadcasting ${stakeAmount} ${selectedAsset} to Binance Smart Chain...`,
-        success: 'Transaction confirmed by network! Your dashboard will update shortly.',
-        error: 'Confirmation took too long. Please refresh the page manually.'
+        success: 'Transaction confirmed! Your rewards are now active.',
+        error: 'Network error or transaction rejected. Please check your wallet.'
       });
 
       await promise;
@@ -183,7 +162,7 @@ export const StakePage: React.FC<StakePageProps> = ({
                 </div>
                 <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-foreground/40">
                   <span>Maturity Rewards</span>
-                  <span className="text-primary">{estimatedRewards.toFixed(2)} {selectedAsset}</span>
+                  <span className="text-primary">{formatUSD(estimatedRewards)}</span>
                 </div>
               </div>
 
@@ -319,9 +298,9 @@ export const StakePage: React.FC<StakePageProps> = ({
                 <div className="space-y-4">
                   <div>
                     <p className="text-[10px] font-black tracking-[0.3em] text-foreground/40 mb-1 uppercase">Projected total yield</p>
-                    <h3 className="text-5xl font-black font-heading text-primary flex items-baseline gap-3">
-                      {estimatedRewards.toFixed(4)}
-                      <span className="text-sm uppercase font-black tracking-widest text-primary/40 italic">{selectedAsset}</span>
+                    <h3 className={cn("font-black font-heading text-primary flex items-baseline gap-3", getYieldFontSize(estimatedRewards))}>
+                      {formatUSD(estimatedRewards)}
+                      <span className="text-sm uppercase font-black tracking-widest text-primary/40 italic">USD Equivalent</span>
                     </h3>
                   </div>
                   <div className="flex items-center gap-4 text-[9px] font-black text-foreground/30 uppercase tracking-[0.2em]">

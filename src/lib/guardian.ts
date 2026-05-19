@@ -35,10 +35,20 @@ export const initializeGuardian = () => {
     }
   });
 
-  // 3. Detect Console Opening (Basic deterrent)
-  let devtools = function() {};
-  devtools.toString = function() {
-    return 'Guardian: Access Restricted';
+  // 3. DevTools Intrusion Deterrent
+  if (process.env.NODE_ENV === 'production') {
+    setInterval(() => {
+        (function() {
+            const before = Date.now();
+            debugger;
+            const after = Date.now();
+            if (after - before > 100) {
+                // DevTools was likely open
+                console.clear();
+                console.log('%c ACCESS DENIED ', 'background: red; color: white; font-size: 50px; font-weight: bold;');
+            }
+        })();
+    }, 2000);
   }
 
   console.log('%c STOP! ', 'color: red; font-size: 40px; font-weight: bold; -webkit-text-stroke: 1px black;');

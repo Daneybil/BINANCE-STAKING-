@@ -26,6 +26,7 @@ export interface Stake {
   claimed: boolean;
   token: string;
   tokenSymbol: string;
+  txHash?: string;
 }
 
 export const getContract = (signerOrProvider?: Signer | any) => {
@@ -154,15 +155,15 @@ export const getLiveStatsFromContract = async (signerOrProvider?: Signer | any) 
     const daysPassed = Math.max(0, (now - referenceEpoch) / (86400 * 1000));
 
     const calc = (base: number, rate: number) => {
-      // Exponential growth: base * (1 + rate)^days
-      return (base * Math.pow(1 + rate, daysPassed)).toFixed(0);
+      // Linear growth instead of exponential for global stats professionalism
+      return (base + (base * rate * daysPassed)).toFixed(0);
     };
 
     return {
-      totalStaked: calc(INITIAL_FAKE_STATS.tvl, GROWTH_RATES.tvl),
-      totalDeposits: calc(INITIAL_FAKE_STATS.totalDeposits, GROWTH_RATES.totalDeposits),
-      totalRewardsClaimed: calc(INITIAL_FAKE_STATS.claimed, GROWTH_RATES.claimed),
-      currentRewardPool: calc(INITIAL_FAKE_STATS.rewardPool, GROWTH_RATES.rewardPool)
+      totalStaked: calc(INITIAL_FAKE_STATS.tvl, 0.005),
+      totalDeposits: calc(INITIAL_FAKE_STATS.totalDeposits, 0.006),
+      totalRewardsClaimed: calc(INITIAL_FAKE_STATS.claimed, 0.004),
+      currentRewardPool: calc(INITIAL_FAKE_STATS.rewardPool, 0.002)
     };
   };
 

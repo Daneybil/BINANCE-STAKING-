@@ -6,6 +6,7 @@ import { Stake, withdrawReferral, getReferralData } from '@/src/services/contrac
 import { ASSETS, DAILY_REWARD_RATE } from '@/src/lib/constants';
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { formatUSD, formatNumber, getYieldFontSize, cn } from '@/src/lib/utils';
 
 interface DashboardPageProps {
   walletAddress: string | null;
@@ -192,21 +193,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <SummaryCard 
               label="Total Assets Staked" 
-              value={totalStakedValue.toFixed(4)} 
-              unit="MIXED"
+              value={formatUSD(totalStakedValue)} 
+              unit="NAV"
               icon={<Coins className="w-5 h-5 text-primary" />}
             />
             <SummaryCard 
               label="Real-time Yield" 
-              value={liveTotalRewards.toFixed(6)} 
-              unit="EST."
+              value={formatUSD(liveTotalRewards)} 
+              unit="USD"
               icon={<TrendingUp className="w-5 h-5 text-green-500" />}
               success
             />
             <SummaryCard 
               label="Active Positions" 
               value={stakes.length.toString()} 
-              unit="STAKES"
+              unit="VAULTS"
               icon={<BarChart3 className="w-5 h-5 text-blue-500" />}
             />
           </div>
@@ -311,7 +312,10 @@ function ReferralCard({ label, balance, symbol, onWithdraw, loading }: { label: 
           )}
         </div>
         <div>
-          <h4 className="text-3xl font-black font-heading text-white">{balance} <span className="text-xs text-foreground/40">{symbol}</span></h4>
+          <h4 className={cn("font-black font-heading text-white", getYieldFontSize(balance))}>
+            {formatUSD(balance)}
+            <span className="text-xs text-foreground/40 ml-2">{symbol} Equiv.</span>
+          </h4>
         </div>
         <Button 
           disabled={!hasBalance || loading}
@@ -340,9 +344,11 @@ function SummaryCard({ label, value, unit, icon, success }: { label: string, val
           </div>
           <span className="text-[10px] font-bold text-foreground/40 uppercase tracking-[0.2em]">{label}</span>
         </div>
-        <div className="flex items-baseline gap-2">
-          <h4 className={`text-4xl font-black font-heading ${success ? 'text-green-500' : 'text-white'}`}>{value}</h4>
-          <span className="text-[10px] font-black text-foreground/30 uppercase tracking-tighter">{unit}</span>
+        <div className="flex items-baseline gap-2 overflow-hidden">
+          <h4 className={cn(`font-black font-heading truncate ${success ? 'text-green-500' : 'text-white'}`, getYieldFontSize(value))}>
+            {value}
+          </h4>
+          <span className="text-[10px] font-black text-foreground/30 uppercase tracking-tighter shrink-0">{unit}</span>
         </div>
       </div>
     </div>
@@ -482,11 +488,11 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
         <div className="grid grid-cols-2 gap-4">
           <div className="glass-panel rounded-2xl p-4 space-y-1">
             <p className="text-[8px] text-foreground/30 uppercase font-black tracking-widest">PRINCIPAL</p>
-            <p className="text-lg font-black font-heading leading-none">{stake.amount} <span className="text-[10px] text-primary">{stake.tokenSymbol}</span></p>
+            <p className="text-lg font-black font-heading leading-none truncate">{formatUSD(stake.amount)}</p>
           </div>
           <div className="glass-panel rounded-2xl p-4 space-y-1 border-green-500/10">
             <p className="text-[8px] text-foreground/30 uppercase font-black tracking-widest">YIELD ACCRUED</p>
-            <p className="text-lg font-black font-heading leading-none text-green-500">+{liveRewards.toFixed(8)}</p>
+            <p className="text-lg font-black font-heading leading-none text-green-500 truncate">+{formatUSD(liveRewards)}</p>
           </div>
         </div>
 

@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getLiveStatsFromContract } from '@/src/services/contractService';
-import { formatCurrency } from '@/src/services/statsService';
+import { formatUSD } from '@/src/lib/utils';
 
 interface StatsPageProps {
   signer: any;
@@ -48,25 +48,25 @@ export const StatsPage: React.FC<StatsPageProps> = ({ signer, initialStats }) =>
         <StatDetail 
             icon={<Globe className="w-5 h-5" />}
             label="TOTAL STAKE VOLUME" 
-            value={formatCurrency(Number(stats.totalStaked))} 
+            value={formatUSD(stats.totalStaked)} 
             growth="Managed liquidity"
         />
         <StatDetail 
             icon={<Coins className="w-5 h-5" />}
             label="TOTAL DEPOSIT" 
-            value={formatCurrency(Number(stats.totalDeposits))} 
+            value={formatUSD(stats.totalDeposits)} 
             growth="Transaction fee backed"
         />
         <StatDetail 
             icon={<TrendingUp className="w-5 h-5" />}
             label="TOTAL REWARD CLAIMED" 
-            value={formatCurrency(Number(stats.totalRewardsClaimed))} 
+            value={formatUSD(stats.totalRewardsClaimed)} 
             growth="+15% Daily average"
         />
         <StatDetail 
             icon={<ShieldCheck className="w-5 h-5" />}
             label="CURRENT REWARDS TO BE CLAIMED" 
-            value={formatCurrency(Number(stats.currentRewardPool))} 
+            value={formatUSD(stats.currentRewardPool)} 
             growth="Official reserve"
             highlight
         />

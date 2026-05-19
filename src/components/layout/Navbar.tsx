@@ -7,6 +7,7 @@ import { Logo } from '@/src/components/ui/Logo';
 interface NavbarProps {
   walletAddress: string | null;
   onConnect: () => void;
+  onDisconnect: () => void;
   currentPage: string;
   setCurrentPage: (page: string) => void;
   contractActive: boolean;
@@ -15,6 +16,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ 
   walletAddress, 
   onConnect, 
+  onDisconnect,
   currentPage, 
   setCurrentPage,
   contractActive
@@ -61,13 +63,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <div className="flex items-center gap-4">
           {walletAddress ? (
-            <div className="flex items-center gap-2 bg-secondary/50 rounded-full pl-2 pr-4 py-1.5 border border-white/5">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                <Wallet className="w-3 h-3 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-secondary/50 rounded-full pl-2 pr-4 py-1.5 border border-white/5">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Wallet className="w-3 h-3 text-primary" />
+                </div>
+                <span className="text-xs font-mono font-medium">
+                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                </span>
               </div>
-              <span className="text-xs font-mono font-medium">
-                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-              </span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onDisconnect}
+                className="h-9 px-3 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/5 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 transition-all"
+              >
+                Disconnect
+              </Button>
             </div>
           ) : (
             <Button onClick={onConnect} className="binance-button rounded-full px-6 flex gap-2 h-10 text-[10px] font-bold uppercase tracking-wider">

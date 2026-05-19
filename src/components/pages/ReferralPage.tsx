@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { getReferralData, withdrawReferral } from '@/src/services/contractService';
 import { USDT_ADDRESS } from '@/src/lib/constants';
+import { formatUSD, formatNumber, getYieldFontSize, cn } from '@/src/lib/utils';
 
 interface ReferralPageProps {
   walletAddress: string | null;
@@ -178,13 +179,13 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <PartnerMetric 
                           label="Earned BNB" 
-                          value={data.bnbRewards} 
+                          value={formatUSD(data.bnbRewards)} 
                           onWithdraw={() => handleWithdraw('BNB')}
                           canWithdraw={parseFloat(data.bnbRewards) > 0 && isActive}
                         />
                         <PartnerMetric 
                           label="Earned USDT" 
-                          value={data.usdtRewards} 
+                          value={formatUSD(data.usdtRewards)} 
                           onWithdraw={() => handleWithdraw('USDT')}
                           canWithdraw={parseFloat(data.usdtRewards) > 0 && isActive}
                         />
@@ -220,8 +221,8 @@ function CommissionCard({ token, amount, onWithdraw, loading, active }: { token:
         <div>
           <p className="text-[9px] font-black text-foreground/30 uppercase tracking-widest mb-1">{token} REWARDS</p>
           <div className="flex items-baseline gap-2">
-            <p className="text-2xl font-black font-heading leading-none">{amount}</p>
-            <span className="text-[10px] font-black text-primary uppercase">{token.split(' ')[0]}</span>
+            <p className={cn("font-black font-heading leading-none", getYieldFontSize(amount))}>{formatUSD(amount)}</p>
+            <span className="text-[10px] font-black text-primary uppercase">USD Equiv.</span>
           </div>
         </div>
       </div>

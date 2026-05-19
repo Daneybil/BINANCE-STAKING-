@@ -6,10 +6,19 @@ export const BSC_RPC_URL = 'https://bsc-dataseed.binance.org/';
 let cachedProvider: BrowserProvider | null = null;
 let cachedSigner: JsonRpcSigner | null = null;
 
+export const disconnectWallet = () => {
+  cachedProvider = null;
+  cachedSigner = null;
+  if (typeof window !== 'undefined' && (window as any).ethereum) {
+    // Note: EIP-1193 doesn't have a standard "disconnect" method for the provider itself
+    // but clearing our local state is the standard way to handle sessions.
+  }
+};
+
 export const getProvider = () => {
   if (typeof window !== 'undefined' && (window as any).ethereum) {
     if (!cachedProvider) {
-      cachedProvider = new BrowserProvider((window as any).ethereum, "any");
+      cachedProvider = new BrowserProvider((window as any).ethereum, 56);
     }
     return cachedProvider;
   }
@@ -69,20 +78,21 @@ export const connectWallet = async (): Promise<JsonRpcSigner | null> => {
       // Re-verify after switch attempt
       const verifiedChainId = await ethereum.request({ method: 'eth_chainId' });
       if (!verifiedChainId || verifiedChainId.toLowerCase() !== BSC_CHAIN_ID.toLowerCase()) {
-        throw new Error("Automatic network switch failed. Please manually select Binance Smart Chain in your wallet.");
+        throw new Error("Action Denied: You must switch to Binance Smart Chain to use this platform.");
       }
     }
     
-    // 3. Final Signer Setup - Force fresh provider to avoid stale states
+    // 3. Final Signer Setup - Force fresh provider for chain 56
     const provider = new BrowserProvider(ethereum, 56);
     const signer = await provider.getSigner();
     
-    // Ensure we are actually on 56 (BNB Smart Chain)
+    // Final hard verification
     const network = await provider.getNetwork();
     if (network.chainId !== 56n) {
-      throw new Error(`Critical Network Failure: Connected to Chain ID ${network.chainId} instead of BSC (56).`);
+      throw new Error(`Connection Blocked: Detected Chain ID ${network.chainId}. This platform only supports BSC (Chain 56).`);
     }
     
+    cachedSigner = signer;
     return signer;
   } catch (error: any) {
     console.error('Wallet connection sequence failed:', error);

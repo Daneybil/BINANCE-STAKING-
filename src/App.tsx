@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 
-import { connectWallet } from '@/src/lib/web3';
+import { connectWallet, disconnectWallet } from '@/src/lib/web3';
 import { getStakes, Stake, checkIsActive, getLiveStatsFromContract } from '@/src/services/contractService';
 import { INITIAL_FAKE_STATS } from '@/src/lib/constants';
 import { signIn, auth } from '@/src/lib/firebase';
@@ -179,7 +179,7 @@ export default function App() {
   const handleConnect = async () => {
     try {
       // 1. Connect Wallet FIRST (Preserves "user gesture" for MetaMask popups)
-      toast.loading("Verifying network state...");
+      toast.loading("Authenticating Binance Wallet...");
       const connectedSigner = await connectWallet();
       
       if (connectedSigner) {
@@ -187,6 +187,7 @@ export default function App() {
         const lowerAddress = address.toLowerCase();
         
         localStorage.setItem('walletAddress', lowerAddress);
+        localStorage.setItem('walletConnected', 'true');
 
         // 2. Ensure Firebase/Identity is active
         if (!auth.currentUser) {
@@ -194,12 +195,6 @@ export default function App() {
             await signIn();
           } catch (authErr: any) {
             console.error("Identity session establishment paused", authErr);
-            if (authErr.code === 'auth/admin-restricted-operation') {
-              toast.error("Firebase Configuration Error", {
-                description: "Anonymous Auth is disabled. Please enable it in your Firebase Console (Authentication > Sign-in method).",
-                duration: 8000
-              });
-            }
           }
         }
 
@@ -209,8 +204,8 @@ export default function App() {
         setWalletAddress(lowerAddress);
 
         toast.dismiss();
-        toast.success("Identity Verified", {
-          description: `Connected to BNB Smart Chain`,
+        toast.success("Wallet Securely Connected", {
+          description: `Active on BNB Smart Chain`,
         });
         
         if (currentPage === 'home') setCurrentPage('dashboard');
@@ -227,6 +222,18 @@ export default function App() {
         toast.error("Handshake Failed", { description: error.message || "Unknown error occurred" });
       }
     }
+  };
+
+  const handleDisconnect = () => {
+    disconnectWallet();
+    setWalletAddress(null);
+    setSigner(null);
+    setChainId(null);
+    setStakes([]);
+    localStorage.removeItem('walletAddress');
+    localStorage.removeItem('walletConnected');
+    toast.info("Wallet Disconnected", { description: "Your session has been cleared safely." });
+    setCurrentPage('home');
   };
 
   const renderPage = () => {
@@ -299,6 +306,7 @@ export default function App() {
       <Navbar 
         walletAddress={walletAddress} 
         onConnect={handleConnect} 
+        onDisconnect={handleDisconnect}
         currentPage={currentPage} 
         setCurrentPage={setCurrentPage}
         contractActive={contractActive}
