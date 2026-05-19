@@ -24,6 +24,26 @@ export const formatNumber = (value: string | number, decimals: number = 2) => {
   }).format(numericValue);
 };
 
+export const formatCrypto = (amount: number | string, symbol: string, bnbPrice: number = 0) => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const isBNB = symbol === 'BNB' || symbol === 'WBNB';
+  const usdEquiv = isBNB ? num * bnbPrice : num;
+  
+  const precision = isBNB ? 4 : 2;
+  const formattedAmount = num.toLocaleString('en-US', {
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision,
+  });
+
+  return {
+    amount: `${formattedAmount} ${symbol}`,
+    usd: new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(usdEquiv)
+  };
+};
+
 export const cn = (...classes: any[]) => {
   return classes.filter(Boolean).join(' ');
 };

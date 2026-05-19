@@ -6,7 +6,8 @@ import { Stake, withdrawReferral, getReferralData } from '@/src/services/contrac
 import { ASSETS, DAILY_REWARD_RATE } from '@/src/lib/constants';
 import { Progress } from "@/src/components/ui/progress";
 import { toast } from "sonner";
-import { formatUSD, formatNumber, getYieldFontSize, cn } from '@/src/lib/utils';
+import { formatUSD, formatNumber, getYieldFontSize, cn, formatCrypto } from '@/src/lib/utils';
+import { useBNBPrice } from '@/src/services/priceService';
 
 interface DashboardPageProps {
   walletAddress: string | null;
@@ -31,6 +32,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onRefresh,
   onConnect
 }) => {
+  const { price: bnbPrice } = useBNBPrice();
   const [liveTotalRewards, setLiveTotalRewards] = React.useState(0);
   const [referralData, setReferralData] = React.useState({ bnbRewards: "0", usdtRewards: "0", wbnbRewards: "0", referrer: "" });
   const [loading, setLoading] = React.useState(false);
@@ -49,7 +51,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     checkFirestore();
   }, []);
 
-  const totalStakedValue = stakes.reduce((acc, s) => acc + parseFloat(s.amount), 0);
+  const totalStakedValueUSD = stakes.reduce((acc, s) => {
+    const amount = parseFloat(s.amount);
+    const isBNB = s.tokenSymbol === 'BNB' || s.tokenSymbol === 'WBNB';
+    return acc + (isBNB ? amount * bnbPrice : amount);
+  }, 0);
 
   const fetchReferral = React.useCallback(async () => {
     if (signer && walletAddress) {
@@ -124,19 +130,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       
       const activeStakes = stakes.filter(s => !s.claimed);
       
-      const total = activeStakes.reduce((acc, stake) => {
+      const totalUSD = activeStakes.reduce((acc, stake) => {
         const amount = parseFloat(stake.amount);
         const startTime = stake.startTime; // in ms
         const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
         
         // Exact 15% daily yield
-        // Formula: Amount * Rate * (Elapsed/86400)
-        const earned = (amount * dailyRate * elapsedSeconds) / 86400;
+        const earnedNative = (amount * dailyRate * elapsedSeconds) / 86400;
+        const isBNB = stake.tokenSymbol === 'BNB' || stake.tokenSymbol === 'WBNB';
+        const earnedUSD = isBNB ? earnedNative * bnbPrice : earnedNative;
         
-        return acc + earned;
+        return acc + earnedUSD;
       }, 0);
       
-      setLiveTotalRewards(total);
+      setLiveTotalRewards(totalUSD);
     };
 
     calculateTotal();
@@ -195,14 +202,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <SummaryCard 
               label="Total Assets Staked" 
-              value={formatUSD(totalStakedValue)} 
-              unit="NAV"
+              value={formatUSD(totalStakedValueUSD)} 
+              unit="USD ONLY"
               icon={<Coins className="w-5 h-5 text-primary" />}
             />
             <SummaryCard 
-              label="Real-time Yield" 
+              label="Total Protocol Yield" 
               value={formatUSD(liveTotalRewards)} 
-              unit="USD"
+              unit="USD ONLY"
               icon={<TrendingUp className="w-5 h-5 text-green-500" />}
               success
             />
@@ -286,7 +293,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {stakes.map((stake) => (
-                  <StakeCard key={stake.id} stake={stake} signer={signer} isActive={isActive} refresh={onRefresh} />
+                  <StakeCard key={stake.id} stake={stake} signer={signer} isActive={isActive} refresh={onRefresh} bnbPrice={bnbPrice} />
                 ))}
               </div>
             )}
@@ -362,10 +369,11 @@ interface StakeCardProps {
   signer: any;
   isActive: boolean;
   refresh: () => void;
+  bnbPrice: number;
   key?: any;
 }
 
-function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
+function StakeCard({ stake, signer, isActive, refresh, bnbPrice }: StakeCardProps) {
   const [loading, setLoading] = React.useState(false);
   const [liveRewards, setLiveRewards] = React.useState(parseFloat(stake.accumulatedRewards));
   const asset = ASSETS.find(a => a.id === stake.tokenSymbol) || ASSETS[0];
@@ -381,7 +389,6 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
       const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
       
       // Calculate yield: 15% daily
-      // User earns 15% every 24 hours. Formula: Amount * 0.15 * (elapsed / 86400)
       const earned = (amount * dailyRate * elapsedSeconds) / 86400;
       
       setLiveRewards(earned);
@@ -389,6 +396,10 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
 
     return () => clearInterval(ticker);
   }, [stake.amount, stake.startTime, stake.lockDuration]);
+
+  const formattedPrincipal = React.useMemo(() => formatCrypto(stake.amount, stake.tokenSymbol, bnbPrice), [stake.amount, stake.tokenSymbol, bnbPrice]);
+  const formattedRewards = React.useMemo(() => formatCrypto(liveRewards, stake.tokenSymbol, bnbPrice), [liveRewards, stake.tokenSymbol, bnbPrice]);
+  const formattedTotal = React.useMemo(() => formatCrypto(parseFloat(stake.amount) + liveRewards, stake.tokenSymbol, bnbPrice), [stake.amount, liveRewards, stake.tokenSymbol, bnbPrice]);
 
   const now = Date.now();
   const endTime = stake.startTime + (stake.lockDuration * 1000);
@@ -480,13 +491,26 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="glass-panel rounded-2xl p-4 space-y-1">
-            <p className="text-[8px] text-foreground/30 uppercase font-black tracking-widest">PRINCIPAL</p>
-            <p className="text-lg font-black font-heading leading-none truncate">{formatUSD(stake.amount)}</p>
+            <p className="text-[8px] text-foreground/30 uppercase font-black tracking-widest">PRINCIPAL AMOUNT</p>
+            <p className="text-sm font-black font-heading leading-none truncate">{formattedPrincipal.amount}</p>
+            <p className="text-[8px] text-foreground/40 font-bold uppercase tracking-widest">{formattedPrincipal.usd}</p>
           </div>
           <div className="glass-panel rounded-2xl p-4 space-y-1 border-green-500/10">
-            <p className="text-[8px] text-foreground/30 uppercase font-black tracking-widest">YIELD ACCRUED</p>
-            <p className="text-lg font-black font-heading leading-none text-green-500 truncate">+{formatUSD(liveRewards)}</p>
+            <p className="text-[8px] text-foreground/30 uppercase font-black tracking-widest">EARNING AMOUNT</p>
+            <p className="text-sm font-black font-heading leading-none text-green-500 truncate">+{formattedRewards.amount}</p>
+            <p className="text-[8px] text-green-500/60 font-bold uppercase tracking-widest">{formattedRewards.usd}</p>
           </div>
+        </div>
+
+        <div className="bg-secondary/20 rounded-2xl p-4 border border-white/5 flex justify-between items-center">
+            <div className="space-y-1">
+                <p className="text-[8px] text-foreground/30 uppercase font-black tracking-widest">TOTAL AT MATURITY</p>
+                <p className="text-md font-black text-primary leading-none">{formattedTotal.amount}</p>
+            </div>
+            <div className="text-right">
+                <p className="text-[8px] text-foreground/30 uppercase font-black tracking-widest">USD VAL</p>
+                <p className="text-[10px] font-black text-foreground/60">{formattedTotal.usd}</p>
+            </div>
         </div>
 
         <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest text-foreground/30 px-1">

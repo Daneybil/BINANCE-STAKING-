@@ -10,7 +10,8 @@ import { stakeAsset } from '@/src/services/contractService';
 import { saveManualStake } from '@/src/services/firebaseService';
 import { auth, signIn } from '@/src/lib/firebase';
 import { toast } from "sonner";
-import { formatUSD, formatNumber, getYieldFontSize, cn } from '@/src/lib/utils';
+import { formatUSD, formatNumber, getYieldFontSize, cn, formatCrypto } from '@/src/lib/utils';
+import { useBNBPrice } from '@/src/services/priceService';
 
 interface StakePageProps {
   walletAddress: string | null;
@@ -48,6 +49,7 @@ export const StakePage: React.FC<StakePageProps> = ({
   onRefresh,
   onConnect
 }) => {
+  const { price: bnbPrice } = useBNBPrice();
   const [selectedAsset, setSelectedAsset] = useState(ASSETS[0].id);
   const [stakeAmount, setStakeAmount] = useState('');
   const [lockDays, setLockDays] = useState(60);
@@ -67,12 +69,16 @@ export const StakePage: React.FC<StakePageProps> = ({
   const estimatedRewards = useMemo(() => {
     try {
       const amount = parseFloat(stakeAmount) || 0;
-      // 15% daily reward calculation (flat rate, no multiplier)
+      // 15% daily reward calculation (flat rate)
       return (amount * 0.15 * lockDays);
     } catch (e) {
       return 0;
     }
   }, [stakeAmount, lockDays]);
+
+  const formattedRewards = useMemo(() => {
+    return formatCrypto(estimatedRewards, selectedAsset, bnbPrice);
+  }, [estimatedRewards, selectedAsset, bnbPrice]);
 
   const handleStakeClick = () => {
     if (!walletAddress) {
@@ -192,7 +198,7 @@ export const StakePage: React.FC<StakePageProps> = ({
                 </div>
                 <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-foreground/40">
                   <span>Maturity Rewards</span>
-                  <span className="text-primary">{formatUSD(estimatedRewards)}</span>
+                  <span className="text-primary">{formattedRewards.amount} (~{formattedRewards.usd})</span>
                 </div>
               </div>
 
@@ -321,30 +327,34 @@ export const StakePage: React.FC<StakePageProps> = ({
                 </div>
               </div>
 
-              <div className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
-                  <Activity className="w-32 h-32" />
+              <div className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-6 lg:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:rotate-12 transition-transform duration-1000 pointer-events-none">
+                  <Activity className="w-24 h-24 lg:w-32 lg:h-32" />
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2 lg:space-y-3 w-full lg:w-auto">
                   <div>
-                    <p className="text-[10px] font-black tracking-[0.3em] text-foreground/40 mb-1 uppercase">Projected total yield</p>
-                    <h3 className={cn("font-black font-heading text-primary flex items-baseline gap-3", getYieldFontSize(estimatedRewards))}>
-                      {formatUSD(estimatedRewards)}
-                      <span className="text-sm uppercase font-black tracking-widest text-primary/40 italic">USD Equivalent</span>
-                    </h3>
+                    <p className="text-[9px] font-black tracking-[0.2em] text-foreground/40 mb-1 uppercase">Projected Yield</p>
+                    <div className="flex flex-col">
+                      <h3 className={cn("font-black font-heading text-primary leading-tight", getYieldFontSize(formattedRewards.amount))}>
+                        {formattedRewards.amount}
+                      </h3>
+                      <p className="text-[10px] lg:text-xs uppercase font-bold tracking-widest text-foreground/40 italic">
+                        ≈ {formattedRewards.usd}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 text-[9px] font-black text-foreground/30 uppercase tracking-[0.2em]">
-                    <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> AUDIT VERIFIED</span>
-                    <span className="flex items-center gap-1"><Activity className="w-3 h-3" /> INSTANT SETTLE</span>
+                  <div className="flex items-center gap-3 text-[8px] font-black text-foreground/20 uppercase tracking-[0.2em]">
+                    <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> VERIFIED</span>
+                    <span className="flex items-center gap-1"><Activity className="w-3 h-3" /> SETTLE</span>
                   </div>
                 </div>
                 <Button 
                   onClick={handleStakeClick} 
                   disabled={isStaking}
-                  className="binance-button h-20 px-12 rounded-[2rem] w-full md:w-auto text-xl font-black tracking-tighter group italic shadow-2xl shadow-primary/20"
+                  className="binance-button h-16 lg:h-20 px-8 lg:px-12 rounded-2xl lg:rounded-[2rem] w-full lg:w-auto text-lg lg:text-xl font-black tracking-tighter group italic shadow-2xl shadow-primary/20"
                 >
                   {isStaking ? "INITIALIZING..." : "EXECUTE STAKE"}
-                  <ChevronRight className="w-6 h-6 ml-2 group-hover:translate-x-2 transition-transform" />
+                  <ChevronRight className="w-5 h-5 lg:w-6 lg:h-6 ml-2 group-hover:translate-x-2 transition-transform" />
                 </Button>
               </div>
             </div>
