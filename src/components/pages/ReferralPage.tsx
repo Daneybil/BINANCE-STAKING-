@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, History, Link as LinkIcon, Gift, TrendingUp, AlertCircle, Coins } from 'lucide-react';
+import { Users, History, Link as LinkIcon, Gift, TrendingUp, AlertCircle, Coins, Share2, Send, MessageCircle, Copy, FileText, Check, Mail } from 'lucide-react';
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -78,11 +78,78 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
     }
   };
 
+  const getPromoMessage = () => {
+    const link = `${window.location.origin}/?ref=${walletAddress || '0x00...'}`;
+    return `Generating $50,000+ passive income is now possible! I just joined the official Binance Staking protocol with high-yield vaults yielding a massive 15% daily reward paid in native BNB/USDT.
+
+By sharing your link, you get an instant 10% cash bonus on every referral deposit! If we scale our community to $500,000 in total network volume, we can secure over $50,000.
+
+Join my premium circle here: ${link}
+
+- Connect your Trust Wallet, MetaMask, and other DeFi wallets, etc.
+- Execute your first stake today!`;
+  };
+
   const copyRefLink = () => {
     if (!walletAddress) return onConnect();
     const link = `${window.location.origin}/?ref=${walletAddress}`;
     navigator.clipboard.writeText(link);
-    toast.success("Link Copied", { description: "Your Binance referral link is ready to share." });
+    toast.success("Link Copied", { description: "Your direct Binance staking referral link is copied." });
+  };
+
+  const copyFullPromoText = () => {
+    if (!walletAddress) return onConnect();
+    const promo = getPromoMessage();
+    navigator.clipboard.writeText(promo);
+    toast.success("Viral Promo Copied!", { 
+      description: "Complete viral invitation copy containing your active link is ready to paste." 
+    });
+  };
+
+  const shareNative = async () => {
+    if (!walletAddress) return onConnect();
+    const promo = getPromoMessage();
+    const link = `${window.location.origin}/?ref=${walletAddress}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Binance Staking Partnership',
+          text: promo,
+          url: link
+        });
+        toast.success("Shared Successfully");
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          toast.error("Sharing failed", { description: err.message });
+        }
+      }
+    } else {
+      // Fallback
+      copyFullPromoText();
+    }
+  };
+
+  const shareToPlatform = (platform: 'telegram' | 'whatsapp' | 'twitter' | 'email') => {
+    if (!walletAddress) return onConnect();
+    const promo = getPromoMessage();
+    const link = `${window.location.origin}/?ref=${walletAddress}`;
+    
+    let url = '';
+    if (platform === 'telegram') {
+      url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(promo)}`;
+    } else if (platform === 'whatsapp') {
+      url = `https://api.whatsapp.com/send?text=${encodeURIComponent(promo)}`;
+    } else if (platform === 'twitter') {
+      url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(promo)}`;
+    } else if (platform === 'email') {
+      url = `mailto:?subject=${encodeURIComponent("Premium Crypto Staking Partner Program")}&body=${encodeURIComponent(promo)}`;
+    }
+
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      toast.success(`Opening ${platform}...`, { description: "Publishing viral partnership invitation." });
+    }
   };
 
   return (
@@ -158,7 +225,7 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
                 <div className="space-y-10">
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                             <label className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em]">Unique Referral Key</label>
+                             <label className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em]">Unique Referral Key (URL ONLY)</label>
                              <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black tracking-tighter uppercase px-2 py-0.5">Verified Partner</Badge>
                         </div>
                         <div className="flex gap-4">
@@ -169,11 +236,71 @@ export const ReferralPage: React.FC<ReferralPageProps> = ({
                             />
                             <Button 
                                 onClick={copyRefLink}
-                                className="binance-button h-20 px-10 rounded-2xl text-[11px] font-black tracking-widest uppercase hover:scale-105 transition-transform"
+                                className="binance-button h-20 px-10 rounded-2xl text-[11px] font-black tracking-widest uppercase hover:scale-105 transition-transform shrink-0"
                             >
-                                Copy Key
+                                Copy Url
                             </Button>
                         </div>
+                    </div>
+
+                    {/* Viral Share Kit (Option 2) */}
+                    <div className="bg-secondary/30 border border-white/5 rounded-2xl p-6 space-y-4 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-3 bg-primary/10 rounded-bl-xl">
+                        <span className="text-[7px] font-black text-primary tracking-widest uppercase">VIRAL FORCE</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Share2 className="w-4 h-4 text-primary animate-pulse" />
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70">HIGH-MOMENTUM VIRAL SHARE KIT</h4>
+                      </div>
+
+                      <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-[10px] text-foreground/60 leading-relaxed font-mono relative overflow-y-auto max-h-36 font-sans">
+                        <p className="whitespace-pre-wrap">{getPromoMessage()}</p>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <Button
+                          onClick={copyFullPromoText}
+                          variant="outline"
+                          className="flex-1 h-12 rounded-xl text-[9px] font-black uppercase tracking-wider border-white/5 hover:bg-white/5 text-primary flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5" /> Copy Full Invite Text
+                        </Button>
+                        <Button
+                          onClick={shareNative}
+                          className="flex-1 binance-button h-12 rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <Share2 className="w-3.5 h-3.5" /> Direct Device Share
+                        </Button>
+                      </div>
+
+                      <div className="pt-2 border-t border-white/5 flex items-center justify-around gap-2">
+                        <button 
+                          onClick={() => shareToPlatform('telegram')}
+                          className="flex items-center gap-1.5 text-[8px] font-black text-foreground/40 hover:text-[#0088cc] uppercase tracking-wider transition-colors duration-200 cursor-pointer"
+                        >
+                          <Send className="w-3 h-3" /> Telegram
+                        </button>
+                        <button 
+                          onClick={() => shareToPlatform('whatsapp')}
+                          className="flex items-center gap-1.5 text-[8px] font-black text-foreground/40 hover:text-[#25D366] uppercase tracking-wider transition-colors duration-200 cursor-pointer"
+                        >
+                          <MessageCircle className="w-3 h-3" /> WhatsApp
+                        </button>
+                        <button 
+                          onClick={() => shareToPlatform('twitter')}
+                          className="flex items-center gap-1.5 text-[8px] font-black text-foreground/40 hover:text-white uppercase tracking-wider transition-colors duration-200 cursor-pointer"
+                        >
+                          <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                          </svg> Twitter / X
+                        </button>
+                        <button 
+                          onClick={() => shareToPlatform('email')}
+                          className="flex items-center gap-1.5 text-[8px] font-black text-foreground/40 hover:text-primary uppercase tracking-wider transition-colors duration-200 cursor-pointer"
+                        >
+                          <Mail className="w-3 h-3" /> Email
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
