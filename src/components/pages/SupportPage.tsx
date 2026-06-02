@@ -4,7 +4,7 @@ import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 
-const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'suppor.t@binancestaking.online';
+const SUPPORT_EMAIL = 'support.binance@cryptostaking.online';
 
 export const SupportPage: React.FC = () => {
   return (

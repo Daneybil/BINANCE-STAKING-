@@ -20,7 +20,7 @@ interface DashboardPageProps {
   onConnect: () => void;
 }
 
-const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'suppor.t@binancestaking.online';
+const SUPPORT_EMAIL = 'support.binance@cryptostaking.online';
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ 
   walletAddress, 
