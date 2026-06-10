@@ -3,6 +3,7 @@ import { Wallet, Coins, Menu, X } from 'lucide-react';
 import { Button } from "@/src/components/ui/button";
 
 import { Logo } from '@/src/components/ui/Logo';
+import { LanguageSelector } from './LanguageSelector';
 
 interface NavbarProps {
   walletAddress: string | null;
@@ -63,6 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         <div className="flex items-center gap-4">
+          <LanguageSelector />
           {walletAddress ? (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 bg-secondary/50 rounded-full pl-2 pr-4 py-1.5 border border-white/5">

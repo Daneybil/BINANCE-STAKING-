@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Sitemap Location
+Sitemap: https://cryptostaking.online/sitemap.xml
+
+# Crawl-Delay to avoid server load
+Crawl-delay: 1

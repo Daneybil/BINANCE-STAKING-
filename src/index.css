@@ -124,3 +124,46 @@
     text-shadow: 0 0 15px oklch(var(--primary) / 0.5);
   }
 }
+
+/* Google Translate styling overrides to keep app clean and transparent */
+.goog-te-banner-frame, 
+.goog-te-banner,
+.goog-te-gadget-icon,
+iframe.goog-te-banner-frame {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+.goog-te-gadget {
+  color: transparent !important;
+  font-size: 0 !important;
+}
+
+.goog-te-gadget span {
+  display: none !important;
+}
+
+.goog-te-combo {
+  background-color: #1E2329 !important;
+  border: 1px solid rgba(252,213,53,0.15) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  padding: 4px 8px !important;
+  outline: none !important;
+}
+
+/* Hide translate bar tooltip and header space in browsers */
+#goog-gt-tt, .goog-te-balloon-frame {
+  display: none !important;
+  font-family: inherit !important;
+}
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+}
