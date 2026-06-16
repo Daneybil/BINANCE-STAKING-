@@ -152,7 +152,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }, [stakes]);
 
   return (
-    <div className="space-y-16 py-12">
+    <div className="space-y-16 py-12 overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div className="space-y-4">
           <Badge className="bg-primary/10 text-primary border-none text-[12px] uppercase font-bold tracking-[0.4em] px-4 py-1.5 mb-2">Binance Network Interface</Badge>
@@ -293,7 +293,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {stakes.map((stake) => (
-                  <StakeCard key={stake.id} stake={stake} signer={signer} isActive={isActive} refresh={onRefresh} bnbPrice={bnbPrice} />
+                  <StakeCard key={stake.id} stake={stake} signer={signer} isActive={isActive} refresh={onRefresh} bnbPrice={bnbPrice} walletAddress={walletAddress} />
                 ))}
               </div>
             )}
@@ -370,10 +370,11 @@ interface StakeCardProps {
   isActive: boolean;
   refresh: () => void;
   bnbPrice: number;
+  walletAddress: string | null;
   key?: any;
 }
 
-function StakeCard({ stake, signer, isActive, refresh, bnbPrice }: StakeCardProps) {
+function StakeCard({ stake, signer, isActive, refresh, bnbPrice, walletAddress }: StakeCardProps) {
   const [loading, setLoading] = React.useState(false);
   const [liveRewards, setLiveRewards] = React.useState(parseFloat(stake.accumulatedRewards));
   const asset = ASSETS.find(a => a.id === stake.tokenSymbol) || ASSETS[0];
@@ -517,7 +518,7 @@ function StakeCard({ stake, signer, isActive, refresh, bnbPrice }: StakeCardProp
 
       // 2. Persist to Firestore as claimed/settled to record in history
       const { saveManualStake } = await import('@/src/services/firebaseService');
-      await saveManualStake({
+      await saveManualStake(walletAddress || "", {
         ...stake,
         claimed: true,
         accumulatedRewards: liveRewards.toString(),

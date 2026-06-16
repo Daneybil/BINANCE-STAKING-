@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
-import { TrendingUp, ShieldCheck, Timer, BarChart3, Users, ChevronRight, Activity, Cpu, Globe2, Zap } from 'lucide-react';
+import { TrendingUp, ShieldCheck, Timer, BarChart3, Users, ChevronRight, Activity, Cpu, Globe2, Zap, ExternalLink } from 'lucide-react';
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { formatCurrency } from '@/src/services/statsService';
@@ -31,7 +31,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewStats, 
   }, []);
 
   return (
-    <div className="space-y-24 py-12">
+    <div className="space-y-24 py-12 overflow-x-hidden">
       {/* Hero Section */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[60vh] lg:min-h-[70vh]">
         <motion.div 
@@ -45,7 +45,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewStats, 
                <Logo className="w-16 h-16 lg:w-24 lg:h-24" />
                <Badge className="bg-primary/20 text-primary border-none text-[10px] lg:text-[12px] uppercase font-bold tracking-[0.3em] lg:tracking-[0.4em] px-3 lg:px-4 py-1 lg:py-1.5">Official Binance Ecosystem</Badge>
             </div>
-            <h1 className="text-5xl md:text-7xl lg:text-[9.5rem] font-black font-heading leading-[0.8] tracking-tighter">
+            <h1 className="text-5xl md:text-7xl lg:text-7xl xl:text-[9rem] 2xl:text-[9.5rem] font-black font-heading leading-[0.8] tracking-tighter break-words">
               BINANCE <br />
               <span className="text-primary text-glow">STAKING</span>
             </h1>
@@ -230,6 +230,69 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewStats, 
           title="GLOBAL NETWORK LIQUIDITY"
           description="Our protocol is directly backed by the vast Binance Liquidity Network, leveraging the power of the BNB Ecosystem to ensure a stable and consistent 15% daily yield for all participants."
         />
+      </section>
+
+      {/* Massive Official Explainer Video Section */}
+      <section className="glass-panel border-white/10 rounded-[2.5rem] p-6 md:p-12 lg:p-16 relative overflow-hidden max-w-6xl mx-auto space-y-8 md:space-y-12">
+        <div className="absolute top-0 left-0 w-full h-full bg-primary/2 opacity-30 -z-10" />
+        <div className="absolute -top-12 -right-12 w-64 h-64 bg-primary/5 rounded-full blur-[80px]" />
+        
+        <div className="text-center space-y-4 max-w-3xl mx-auto">
+          <Badge className="bg-primary/20 text-primary border-none text-[10px] uppercase font-black tracking-[0.4em] px-4 py-1.5 mx-auto block w-fit">
+            Official Video Guide
+          </Badge>
+          <h2 className="text-3xl md:text-5xl lg:text-7xl font-black font-heading tracking-tighter uppercase leading-[0.9]">
+            HOW <span className="text-primary text-glow font-black">BINANCE STAKING</span> WORKS
+          </h2>
+          <p className="text-foreground/50 text-xs md:text-sm leading-relaxed font-bold tracking-wide">
+            Watch our step-by-step video guide outlining the autonomous smart contract mechanics, multi-signature security protocols, automated daily compound yields, and instant liquidity withdrawals.
+          </p>
+        </div>
+
+        {/* Video Player Container */}
+        <div className="relative aspect-video w-full max-w-5xl mx-auto rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-2 border-white/10 hover:border-primary/25 shadow-[0_0_100px_rgba(0,0,0,0.6)] hover:shadow-[0_0_120px_rgba(243,186,47,0.15)] transition-all duration-500 bg-[#0c0c0c]">
+          <video 
+            src="/binance_staking.mp4" 
+            controls 
+            playsInline
+            preload="auto"
+            className="w-full h-full absolute inset-0 object-contain"
+            poster="https://cryptologos.cc/logos/binance-coin-bnb-logo.png"
+          >
+            Your browser does not support the HTML5 video tag.
+          </video>
+        </div>
+
+        {/* Quick Steps/Highlights under the video */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-white/5">
+          <div className="flex gap-4 items-start">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0 font-mono">
+              01
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">Connect Web3 Wallet</h4>
+              <p className="text-[10px] text-foreground/40 font-bold leading-relaxed">Securely match your Ledger, Trust Wallet, or MetaMask credentials to the BNB Smart Chain.</p>
+            </div>
+          </div>
+          <div className="flex gap-4 items-start">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0 font-mono">
+              02
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">Provision Delegation</h4>
+              <p className="text-[10px] text-foreground/40 font-bold leading-relaxed">Select specialized locked or flexible yield pools and confirm your asset allocation on-chain.</p>
+            </div>
+          </div>
+          <div className="flex gap-4 items-start">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0 font-mono">
+              03
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">Earn Real-time Rewards</h4>
+              <p className="text-[10px] text-foreground/40 font-bold leading-relaxed">Yield is calculated and distributed autonomously every second, available for instant claim.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Trust & Stats Preview */}

@@ -171,7 +171,7 @@ export const StakePage: React.FC<StakePageProps> = ({
   // Removed restrictive early return to prevent "blank screen" reported by user
   
   return (
-    <div className="space-y-16 py-12">
+    <div className="space-y-16 py-12 overflow-x-hidden">
       {/* Confirmation Modal */}
       {showConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-300">

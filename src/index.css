@@ -125,23 +125,52 @@
   }
 }
 
-/* Google Translate styling overrides to keep app clean and transparent */
-.goog-te-banner-frame, 
+/* Google Translate styling overrides - Extreme high priority to ensure zero interference */
+.goog-te-banner-frame,
 .goog-te-banner,
 .goog-te-gadget-icon,
-iframe.goog-te-banner-frame {
+iframe.goog-te-banner-frame,
+iframe[class*="goog"],
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-te-balloon {
   display: none !important;
   visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+}
+
+html {
+  top: 0px !important;
+  margin-top: 0px !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
 }
 
 body {
   top: 0px !important;
+  margin-top: 0px !important;
   position: static !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .goog-te-gadget {
   color: transparent !important;
   font-size: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .goog-te-gadget span {
@@ -157,11 +186,6 @@ body {
   outline: none !important;
 }
 
-/* Hide translate bar tooltip and header space in browsers */
-#goog-gt-tt, .goog-te-balloon-frame {
-  display: none !important;
-  font-family: inherit !important;
-}
 .goog-text-highlight {
   background: none !important;
   box-shadow: none !important;

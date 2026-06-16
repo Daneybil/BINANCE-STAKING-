@@ -153,7 +153,7 @@ Join my premium circle here: ${link}
   };
 
   return (
-    <div className="space-y-16 py-12">
+    <div className="space-y-16 py-12 overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div className="space-y-4">
           <Badge className="bg-primary/10 text-primary border-none text-[12px] uppercase font-bold tracking-[0.4em] px-4 py-1.5 mb-2">Binance Growth Program</Badge>
