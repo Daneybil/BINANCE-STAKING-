@@ -331,6 +331,21 @@ export default function App() {
       />
 
       <main className="container mx-auto px-4 min-h-[calc(100vh-200px)]">
+        {currentPage !== 'home' && (
+          <div className="pt-6 pb-2 flex justify-start">
+            <button 
+              type="button"
+              onClick={() => {
+                setCurrentPage('home');
+                window.scrollTo(0,0);
+              }}
+              className="group inline-flex items-center gap-2 bg-secondary/35 hover:bg-[#F3BA2F]/10 border border-white/5 hover:border-[#F3BA2F]/30 text-foreground/80 hover:text-[#F3BA2F] font-black text-[10px] uppercase tracking-[0.2em] px-5 py-2.5 rounded-full transition-all duration-300 shadow-md cursor-pointer select-none"
+            >
+              <span className="text-sm font-black group-hover:-translate-x-1 transition-transform inline-block">←</span>
+              <span>Back to Homepage</span>
+            </button>
+          </div>
+        )}
         {renderPage()}
       </main>
 

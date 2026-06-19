@@ -61,11 +61,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewStats, 
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 lg:gap-6">
-            <Button onClick={onStart} className="binance-button h-16 lg:h-20 px-8 lg:px-12 rounded-none text-base lg:text-lg font-black uppercase tracking-widest group">
+            <Button onClick={onStart} className="binance-button h-16 lg:h-20 px-8 lg:px-12 rounded-none text-base lg:text-lg font-black uppercase tracking-widest group cursor-pointer">
               Start Staking <ChevronRight className="ml-3 w-5 h-5 lg:w-6 lg:h-6 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button onClick={onViewStats} variant="outline" className="h-16 lg:h-20 px-8 lg:px-12 rounded-none border-2 border-white/10 hover:bg-white/5 text-base lg:text-lg font-black uppercase tracking-widest">
+            <Button onClick={onViewStats} variant="outline" className="h-16 lg:h-20 px-8 lg:px-12 rounded-none border-2 border-white/10 hover:bg-white/5 text-base lg:text-lg font-black uppercase tracking-widest cursor-pointer">
               Network Stats
+            </Button>
+            <Button 
+              onClick={() => {
+                const element = document.getElementById('how-it-works-section');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                }
+              }} 
+              variant="outline" 
+              className="h-16 lg:h-20 px-8 lg:px-12 rounded-none border-2 border-primary/20 hover:border-primary/50 bg-primary/5 text-primary hover:bg-primary/10 text-base lg:text-lg font-black uppercase tracking-widest transition-all cursor-pointer"
+            >
+              How It Works
             </Button>
           </div>
 
@@ -233,7 +245,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onViewStats, 
       </section>
 
       {/* Massive Official Explainer Video Section */}
-      <section className="glass-panel border-white/10 rounded-[2.5rem] p-6 md:p-12 lg:p-16 relative overflow-hidden max-w-6xl mx-auto space-y-8 md:space-y-12">
+      <section id="how-it-works-section" className="glass-panel border-white/10 rounded-[2.5rem] p-6 md:p-12 lg:p-16 relative overflow-hidden max-w-6xl mx-auto space-y-8 md:space-y-12 scroll-mt-24">
         <div className="absolute top-0 left-0 w-full h-full bg-primary/2 opacity-30 -z-10" />
         <div className="absolute -top-12 -right-12 w-64 h-64 bg-primary/5 rounded-full blur-[80px]" />
         

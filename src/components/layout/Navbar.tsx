@@ -41,10 +41,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2 md:gap-4 group cursor-pointer"
             onClick={() => setCurrentPage('home')}
           >
-            <Logo className="w-10 h-10 md:w-12 md:h-12 transition-transform group-hover:scale-110 duration-300" />
+            <Logo className="w-8 h-8 md:w-12 md:h-12 transition-transform group-hover:scale-110 duration-300" />
             <div className="flex flex-col">
-              <span className="text-2xl md:text-5xl font-black tracking-tighter font-heading leading-none">BINANCE</span>
-              <span className="text-[10px] md:text-[16px] font-bold tracking-[0.4em] md:tracking-[0.6em] text-[#F3BA2F] uppercase leading-tight">STAKING</span>
+              <span className="text-lg sm:text-2xl md:text-5xl font-black tracking-tighter font-heading leading-none">BINANCE</span>
+              <span className="text-[8px] sm:text-[10px] md:text-[16px] font-bold tracking-[0.3em] md:tracking-[0.6em] text-[#F3BA2F] uppercase leading-tight">STAKING</span>
             </div>
           </div>
 
@@ -63,11 +63,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <LanguageSelector />
+        <div className="flex items-center gap-2 md:gap-4">
+          <div className="hidden sm:block">
+            <LanguageSelector />
+          </div>
+          
           {walletAddress ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-secondary/50 rounded-full pl-2 pr-4 py-1.5 border border-white/5">
+            <div className="flex items-center gap-2 md:gap-3">
+              {/* Desktop address pill */}
+              <div className="hidden sm:flex items-center gap-2 bg-secondary/50 rounded-full pl-2 pr-4 py-1.5 border border-white/5">
                 <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
                   <Wallet className="w-3 h-3 text-primary" />
                 </div>
@@ -75,48 +79,114 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
                 </span>
               </div>
+              {/* Mobile compact connected indicator + Instant Disconnect */}
+              <button
+                type="button"
+                onClick={onDisconnect}
+                title="Click to disconnect wallet"
+                className="sm:hidden flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 active:scale-95 border border-red-500/20 rounded-full px-2.5 py-1.5 cursor-pointer transition-all focus:outline-none select-none"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+                <span className="text-[10px] font-mono text-foreground/90 font-bold">{walletAddress.slice(0, 4)}...{walletAddress.slice(-2)}</span>
+                <span className="text-[8px] text-red-500 font-black ml-0.5">✕</span>
+              </button>
+              
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={onDisconnect}
-                className="h-9 px-3 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/5 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 transition-all"
+                className="hidden sm:inline-flex h-9 px-3 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/5 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 transition-all cursor-pointer"
               >
                 Disconnect
               </Button>
             </div>
           ) : (
-            <Button onClick={onConnect} className="binance-button rounded-full px-6 flex gap-2 h-10 text-[10px] font-bold uppercase tracking-wider">
-              <Wallet className="w-4 h-4" />
-              <span>Connect Wallet</span>
+            <Button onClick={onConnect} className="binance-button rounded-full px-3.5 sm:px-6 flex gap-1.5 sm:gap-2 h-9 sm:h-10 text-[9px] sm:text-[10px] font-black uppercase tracking-wider cursor-pointer">
+              <Wallet className="w-3.5 h-3.5" />
+              <span>Connect</span>
             </Button>
           )}
 
           <button 
-            className="lg:hidden p-2 text-foreground/60"
+            type="button"
+            className="lg:hidden p-1.5 py-2 text-foreground/80 hover:text-primary transition-colors flex items-center gap-1 focus:outline-none select-none"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X /> : <Menu />}
+            <span className="text-[10px] sm:text-xs font-black tracking-widest uppercase text-foreground/60">Menu</span>
+            {mobileMenuOpen ? <X className="w-4 h-4 text-primary" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Absolute Mobile Dropdown Menu Panel - Positioned directly below the header bar, completely non-blocking, scrollable and touch-friendly */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-white/5 bg-background p-4 flex flex-col gap-4 animate-in fade-in slide-in-from-top-4">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setCurrentPage(item.id);
-                setMobileMenuOpen(false);
-              }}
-              className={`p-4 rounded-xl text-left text-xs font-bold uppercase tracking-widest ${
-                currentPage === item.id ? 'bg-primary/10 text-primary' : 'text-foreground/60'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+        <div className="lg:hidden absolute top-20 left-0 right-0 w-full z-50 bg-[#0c0c0c]/98 border-b border-white/10 backdrop-blur-xl p-5 flex flex-col gap-4 shadow-[0_15px_40px_rgba(0,0,0,0.9)] animate-in slide-in-from-top-3 duration-200">
+          <div className="text-[9px] font-black uppercase tracking-[0.25em] text-[#F3BA2F] border-b border-white/5 pb-2 px-1">STAKING SECTIONS</div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setCurrentPage(item.id);
+                  setMobileMenuOpen(false);
+                  window.scrollTo(0, 0);
+                }}
+                className={`p-3.5 rounded-xl text-left text-[10px] font-black uppercase tracking-wider flex items-center justify-between border transition-all ${
+                  currentPage === item.id 
+                    ? 'bg-[#F3BA2F]/15 border-[#F3BA2F]/30 text-[#F3BA2F]' 
+                    : 'bg-secondary/20 border-white/5 text-foreground/70 hover:border-white/10'
+                }`}
+              >
+                <span>{item.label}</span>
+                {currentPage === item.id && <span className="w-1.5 h-1.5 rounded-full bg-[#F3BA2F] shadow-[0_0_8px_rgba(243,186,47,0.7)]" />}
+              </button>
+            ))}
+          </div>
+
+          <div className="border-t border-white/5 pt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-black uppercase tracking-[0.25em] text-foreground/45 px-1">LANGUAGE</span>
+              <LanguageSelector />
+            </div>
+
+            <div className="p-3 bg-secondary/15 border border-white/5 rounded-xl space-y-3">
+              <span className="text-[8px] font-black uppercase tracking-[0.25em] text-foreground/35 block mb-1">SECURE CONNECTION STATE</span>
+              {walletAddress ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] sm:text-xs font-mono font-bold tracking-tight text-foreground/90 block break-all">{walletAddress}</span>
+                    <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)] shrink-0" />
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    type="button"
+                    onClick={() => {
+                      onDisconnect();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full h-8.5 text-[9px] font-black uppercase tracking-wider bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/15 rounded-lg cursor-pointer"
+                  >
+                    Disconnect Wallet
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  onClick={() => {
+                    onConnect();
+                    setMobileMenuOpen(false);
+                  }} 
+                  type="button"
+                  className="w-full binance-button rounded-xl h-10 text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Wallet className="w-3.5 h-3.5" />
+                  <span>Connect Wallet</span>
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </nav>
