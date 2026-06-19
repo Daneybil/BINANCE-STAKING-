@@ -4,18 +4,32 @@ import { syncStakesToFirestore, getStakesFromFirestore } from './firebaseService
 
 // Use multiple public RPCs for read-only stats to increase reliability
 const BSC_RPCS = [
-  "https://bsc-dataseed.binance.org/",
   "https://rpc.ankr.com/bsc",
   "https://binance.llamarpc.com",
-  "https://bsc-dataseed1.defibit.io/"
+  "https://bsc-dataseed1.defibit.io/",
+  "https://bsc-dataseed.binance.org/"
 ];
 
 const getFallbackProvider = () => {
-  // Use a simple rotation or just the first working one
   return new JsonRpcProvider(BSC_RPCS[0]);
 };
 
 const defaultProvider = getFallbackProvider();
+
+// Fast multi-node fallback query runner for absolute stability
+export const executeReadOnly = async <T>(callback: (contract: Contract) => Promise<T>, fallbackValue: T): Promise<T> => {
+  for (let i = 0; i < BSC_RPCS.length; i++) {
+    try {
+      const url = BSC_RPCS[i];
+      const provider = new JsonRpcProvider(url);
+      const contract = new Contract(BINANCE_STAKE_ADDRESS, BINANCE_STAKE_ABI, provider);
+      return await callback(contract);
+    } catch (err) {
+      console.warn(`Read-only contract call failed on RPC ${BSC_RPCS[i]}:`, err);
+    }
+  }
+  return fallbackValue;
+};
 
 export interface Stake {
   id: number;
@@ -36,8 +50,9 @@ export const getContract = (signerOrProvider?: Signer | any) => {
 
 export const checkIsActive = async (signerOrProvider?: Signer | any): Promise<boolean> => {
   try {
-    const contract = getContract(signerOrProvider);
-    return await contract.isActive();
+    return await executeReadOnly(async (contract) => {
+      return await contract.isActive();
+    }, true);
   } catch (e) {
     console.error("Failed to check active status", e);
     return true; // Default to active for UI if check fails
@@ -91,12 +106,14 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
     const persistentStakes = await getStakesFromFirestore(address.toLowerCase());
     console.log(`FETCH: Found ${persistentStakes.length} stakes in Firestore.`);
 
-    // 2. Try to fetch from Contract if signer is available
+    // 2. Try to fetch from Contract using resilient read-only provider
     let onChainStakes: Stake[] = [];
-    if (signer) {
+    if (address) {
       try {
-        const contract = getContract(signer);
-        const rawStakes = await contract.getUserStakes(address);
+        const rawStakes = await executeReadOnly(async (contract) => {
+          return await contract.getUserStakes(address);
+        }, null);
+
         if (rawStakes) {
           const stakesArray = Array.from(rawStakes);
           onChainStakes = stakesArray.map((s: any, index: number) => {
@@ -121,7 +138,7 @@ export const getStakes = async (address: string, signer?: Signer): Promise<Stake
           });
         }
       } catch (contractErr) {
-        console.warn("Contract fetch failed, relying on ledger fallback.", contractErr);
+        console.warn("Contract fetch failed on read provider, relying on ledger fallback.", contractErr);
       }
     }
 
@@ -167,14 +184,12 @@ export const getLiveStatsFromContract = async (signerOrProvider?: Signer | any) 
     };
   };
 
-  // If we have a signer, use its provider first. Otherwise rotate through public RPCs
-  const providersToTry = signerOrProvider ? [signerOrProvider] : BSC_RPCS.map(url => new JsonRpcProvider(url));
+  try {
+    const stats: any = await executeReadOnly(async (contract) => {
+      return await contract.getFakeStats();
+    }, null);
 
-  for (const provider of providersToTry) {
-    try {
-      const contract = getContract(provider);
-      const stats = await contract.getFakeStats();
-      
+    if (stats) {
       const tvlValue = stats.tvl ? parseFloat(formatEther(stats.tvl)) : 0;
       const depositsValue = stats.allTimeDeposits ? parseFloat(formatEther(stats.allTimeDeposits)) : 0;
 
@@ -188,40 +203,43 @@ export const getLiveStatsFromContract = async (signerOrProvider?: Signer | any) 
         totalRewardsClaimed: formatEther(stats.claimed || 0),
         currentRewardPool: formatEther(stats.rewardPool || 0)
       };
-    } catch (e) {
-      console.warn("Attempt with node failed, trying next or falling back:", e);
-      continue;
     }
+  } catch (e) {
+    console.warn("Stats fetch failed across all RPC nodes, falling back to simulation:", e);
   }
 
   return getGrowthStats();
 };
 
-export const getReferralData = async (signer: Signer, address: string) => {
+export const getReferralData = async (signerOrProvider: Signer | any, address: string) => {
   try {
-    const contract = getContract(signer);
-    const userData = await contract.users(address);
-    
-    // ABI only contains 3 fields: referrer, totalReferralBNB, totalReferralUSDT
-    const referrer = userData.referrer || userData[0] || "0x0000000000000000000000000000000000000000";
-    const bnbRewards = userData.totalReferralBNB !== undefined ? userData.totalReferralBNB : (userData[1] || 0);
-    const usdtRewards = userData.totalReferralUSDT !== undefined ? userData.totalReferralUSDT : (userData[2] || 0);
+    const userData = await executeReadOnly(async (contract) => {
+      return await contract.users(address);
+    }, null);
 
-    return {
-      referrer,
-      bnbRewards: formatEther(bnbRewards),
-      usdtRewards: formatEther(usdtRewards),
-      wbnbRewards: "0.00" // Reserved for future if contract expands
-    };
+    if (userData) {
+      // ABI only contains 3 fields: referrer, totalReferralBNB, totalReferralUSDT
+      const referrer = userData.referrer || userData[0] || "0x0000000000000000000000000000000000000000";
+      const bnbRewards = userData.totalReferralBNB !== undefined ? userData.totalReferralBNB : (userData[1] || 0);
+      const usdtRewards = userData.totalReferralUSDT !== undefined ? userData.totalReferralUSDT : (userData[2] || 0);
+
+      return {
+        referrer,
+        bnbRewards: formatEther(bnbRewards),
+        usdtRewards: formatEther(usdtRewards),
+        wbnbRewards: "0.00" // Reserved for future if contract expands
+      };
+    }
   } catch (e) {
-    console.error("Failed to fetch referral data", e);
-    return {
-      referrer: "0x0000000000000000000000000000000000000000",
-      bnbRewards: "0.00",
-      usdtRewards: "0.00",
-      wbnbRewards: "0.00"
-    };
+    console.error("Failed to fetch referral data from readable RPCs", e);
   }
+
+  return {
+    referrer: "0x0000000000000000000000000000000000000000",
+    bnbRewards: "0.00",
+    usdtRewards: "0.00",
+    wbnbRewards: "0.00"
+  };
 };
 
 export const stakeAsset = async (
